@@ -760,12 +760,817 @@ const directorSchema = {
         action_state_continuity: {
           type: "array",
           items: { type: "string" }
+const directorSchema = {
+  type: "object",
+
+  properties: {
+
+    /* =====================================================
+       PROJECT
+    ===================================================== */
+
+    project: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        concept: { type: "string" },
+        domain: { type: "string" },
+        duration_seconds: { type: "number" },
+        aspect_ratio: { type: "string" },
+        creative_intent: { type: "string" },
+        realism_target: { type: "string" }
+      },
+      required: [
+        "title",
+        "concept",
+        "domain",
+        "duration_seconds",
+        "aspect_ratio",
+        "creative_intent",
+        "realism_target"
+      ]
+    },
+
+    /* =====================================================
+       EVIDENCE POLICY
+    ===================================================== */
+
+    evidence_policy: {
+      type: "object",
+      properties: {
+
+        locked_facts: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              evidence_id: { type: "string" },
+              claim: { type: "string" },
+              status: {
+                type: "string",
+                enum: [
+                  "VERIFIED_LOCKED",
+                  "INFERRED",
+                  "CREATIVE_RECONSTRUCTION",
+                  "UNKNOWN"
+                ]
+              }
+            },
+            required: [
+              "evidence_id",
+              "claim",
+              "status"
+            ]
+          }
+        },
+
+        inferred_details: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        },
+
+        creative_reconstructions: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        },
+
+        unknown_details: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        },
+
+        contradictions_detected: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        },
+
+        fact_lock_rules: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        }
+
+      },
+
+      required: [
+        "locked_facts",
+        "inferred_details",
+        "creative_reconstructions",
+        "unknown_details",
+        "contradictions_detected",
+        "fact_lock_rules"
+      ]
+    },
+
+    /* =====================================================
+       CHARACTER BIBLE
+    ===================================================== */
+
+    character_bible: {
+      type: "array",
+
+      items: {
+        type: "object",
+
+        properties: {
+
+          name: {
+            type: "string"
+          },
+
+          /*
+             V4.1 IMPORTANT:
+             Identity and visual appearance are now separated.
+          */
+
+          identity_status: {
+            type: "string",
+            enum: [
+              "VERIFIED",
+              "MYTHOLOGICAL_IDENTITY_VERIFIED",
+              "HISTORICAL_IDENTITY_VERIFIED",
+              "FICTIONAL_IDENTITY",
+              "INFERRED",
+              "UNKNOWN"
+            ]
+          },
+
+          visual_design_status: {
+            type: "string",
+            enum: [
+              "VERIFIED",
+              "INFERRED",
+              "CREATIVE_RECONSTRUCTION",
+              "UNKNOWN"
+            ]
+          },
+
+          evidence_ids: {
+            type: "array",
+            items: {
+              type: "string"
+            }
+          },
+
+          /*
+             FIELD-LEVEL EVIDENCE
+          */
+
+          visual_claims: {
+            type: "array",
+
+            items: {
+              type: "object",
+
+              properties: {
+
+                claim: {
+                  type: "string"
+                },
+
+                classification: {
+                  type: "string",
+                  enum: [
+                    "VERIFIED",
+                    "INFERRED",
+                    "CREATIVE_RECONSTRUCTION",
+                    "UNKNOWN"
+                  ]
+                },
+
+                evidence_ids: {
+                  type: "array",
+                  items: {
+                    type: "string"
+                  }
+                }
+
+              },
+
+              required: [
+                "claim",
+                "classification",
+                "evidence_ids"
+              ]
+            }
+          },
+
+          physical_identity: {
+            type: "string"
+          },
+
+          body_proportions: {
+            type: "string"
+          },
+
+          facial_structure: {
+            type: "string"
+          },
+
+          face: {
+            type: "string"
+          },
+
+          eyes: {
+            type: "string"
+          },
+
+          hair_or_fur: {
+            type: "string"
+          },
+
+          skin_or_body_texture: {
+            type: "string"
+          },
+
+          anatomy: {
+            type: "string"
+          },
+
+          musculature: {
+            type: "string"
+          },
+
+          hands_and_fingers: {
+            type: "string"
+          },
+
+          feet_and_toes: {
+            type: "string"
+          },
+
+          breathing: {
+            type: "string"
+          },
+
+          micro_expressions: {
+            type: "string"
+          },
+
+          costume: {
+            type: "string"
+          },
+
+          costume_material: {
+            type: "string"
+          },
+
+          costume_physics: {
+            type: "string"
+          },
+
+          accessories: {
+            type: "string"
+          },
+
+          accessory_physics: {
+            type: "string"
+          },
+
+          movement_signature: {
+            type: "string"
+          },
+
+          emotional_behavior: {
+            type: "string"
+          },
+
+          continuity_rules: {
+            type: "array",
+            items: {
+              type: "string"
+            }
+          },
+
+          forbidden_changes: {
+            type: "array",
+            items: {
+              type: "string"
+            }
+          }
+
+        },
+
+        required: [
+          "name",
+          "identity_status",
+          "visual_design_status",
+          "evidence_ids",
+          "visual_claims",
+          "physical_identity",
+          "body_proportions",
+          "facial_structure",
+          "face",
+          "eyes",
+          "hair_or_fur",
+          "skin_or_body_texture",
+          "anatomy",
+          "musculature",
+          "hands_and_fingers",
+          "feet_and_toes",
+          "breathing",
+          "micro_expressions",
+          "costume",
+          "costume_material",
+          "costume_physics",
+          "accessories",
+          "accessory_physics",
+          "movement_signature",
+          "emotional_behavior",
+          "continuity_rules",
+          "forbidden_changes"
+        ]
+      }
+    },
+
+    /* =====================================================
+       WORLD BIBLE
+    ===================================================== */
+
+    world_bible: {
+
+      type: "object",
+
+      properties: {
+
+        locations: {
+
+          type: "array",
+
+          items: {
+
+            type: "object",
+
+            properties: {
+
+              name: {
+                type: "string"
+              },
+
+              evidence_status: {
+                type: "string",
+                enum: [
+                  "VERIFIED",
+                  "VERIFIED_LOCKED",
+                  "INFERRED",
+                  "CREATIVE_RECONSTRUCTION",
+                  "UNKNOWN"
+                ]
+              },
+
+              evidence_ids: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              },
+
+              /*
+                 V4.1 FIELD-LEVEL WORLD EVIDENCE
+              */
+
+              visual_claims: {
+
+                type: "array",
+
+                items: {
+
+                  type: "object",
+
+                  properties: {
+
+                    claim: {
+                      type: "string"
+                    },
+
+                    classification: {
+                      type: "string",
+                      enum: [
+                        "VERIFIED",
+                        "INFERRED",
+                        "CREATIVE_RECONSTRUCTION",
+                        "UNKNOWN"
+                      ]
+                    },
+
+                    evidence_ids: {
+                      type: "array",
+                      items: {
+                        type: "string"
+                      }
+                    }
+
+                  },
+
+                  required: [
+                    "claim",
+                    "classification",
+                    "evidence_ids"
+                  ]
+                }
+              },
+
+              environment: {
+                type: "string"
+              },
+
+              terrain: {
+                type: "string"
+              },
+
+              vegetation: {
+                type: "string"
+              },
+
+              architecture: {
+                type: "string"
+              },
+
+              props: {
+                type: "string"
+              },
+
+              atmosphere: {
+                type: "string"
+              },
+
+              weather: {
+                type: "string"
+              },
+
+              time_of_day: {
+                type: "string"
+              },
+
+              celestial_conditions: {
+                type: "string"
+              },
+
+              environmental_physics: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              },
+
+              lighting_conditions: {
+                type: "string"
+              },
+
+              continuity_rules: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              }
+
+            },
+
+            required: [
+              "name",
+              "evidence_status",
+              "evidence_ids",
+              "visual_claims",
+              "environment",
+              "terrain",
+              "vegetation",
+              "architecture",
+              "props",
+              "atmosphere",
+              "weather",
+              "time_of_day",
+              "celestial_conditions",
+              "environmental_physics",
+              "lighting_conditions",
+              "continuity_rules"
+            ]
+          }
+        },
+
+        global_physical_rules: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        },
+
+        global_visual_rules: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        }
+
+      },
+
+      required: [
+        "locations",
+        "global_physical_rules",
+        "global_visual_rules"
+      ]
+    },
+
+    /* =====================================================
+       VISUAL LANGUAGE
+    ===================================================== */
+
+    visual_language: {
+
+      type: "object",
+
+      properties: {
+
+        realism_target: {
+          type: "string"
+        },
+
+        capture_system: {
+          type: "string"
+        },
+
+        visual_emulation: {
+          type: "string"
+        },
+
+        lens_policy: {
+          type: "string"
+        },
+
+        focal_length_strategy: {
+          type: "string"
+        },
+
+        framing: {
+          type: "string"
+        },
+
+        camera_height: {
+          type: "string"
+        },
+
+        camera_movement: {
+          type: "string"
+        },
+
+        focus_behavior: {
+          type: "string"
+        },
+
+        depth_of_field: {
+          type: "string"
+        },
+
+        shutter_motion_behavior: {
+          type: "string"
+        },
+
+        lighting: {
+          type: "string"
+        },
+
+        practical_lighting: {
+          type: "string"
+        },
+
+        shadow_behavior: {
+          type: "string"
+        },
+
+        color_science: {
+          type: "string"
+        },
+
+        contrast_strategy: {
+          type: "string"
+        },
+
+        texture_detail: {
+          type: "string"
+        },
+
+        atmospheric_depth: {
+          type: "string"
+        },
+
+        motion_rendering: {
+          type: "string"
+        },
+
+        vfx_philosophy: {
+          type: "string"
+        }
+
+      },
+
+      required: [
+        "realism_target",
+        "capture_system",
+        "visual_emulation",
+        "lens_policy",
+        "focal_length_strategy",
+        "framing",
+        "camera_height",
+        "camera_movement",
+        "focus_behavior",
+        "depth_of_field",
+        "shutter_motion_behavior",
+        "lighting",
+        "practical_lighting",
+        "shadow_behavior",
+        "color_science",
+        "contrast_strategy",
+        "texture_detail",
+        "atmospheric_depth",
+        "motion_rendering",
+        "vfx_philosophy"
+      ]
+    },
+
+    /* =====================================================
+       STORY BLUEPRINT
+    ===================================================== */
+
+    story_blueprint: {
+
+      type: "object",
+
+      properties: {
+
+        logline: {
+          type: "string"
+        },
+
+        opening_hook: {
+          type: "string"
+        },
+
+        emotional_arc: {
+          type: "string"
+        },
+
+        escalation: {
+          type: "string"
+        },
+
+        climax: {
+          type: "string"
+        },
+
+        ending_beat: {
+          type: "string"
+        },
+
+        pacing_strategy: {
+          type: "string"
+        },
+
+        beats: {
+
+          type: "array",
+
+          items: {
+
+            type: "object",
+
+            properties: {
+
+              beat_number: {
+                type: "number"
+              },
+
+              time_range: {
+                type: "string"
+              },
+
+              duration_seconds: {
+                type: "number"
+              },
+
+              location: {
+                type: "string"
+              },
+
+              evidence_ids: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              },
+
+              story_action: {
+                type: "string"
+              },
+
+              character_action: {
+                type: "string"
+              },
+
+              emotional_purpose: {
+                type: "string"
+              },
+
+              visual_priority: {
+                type: "string"
+              },
+
+              transition_to_next: {
+                type: "string"
+              }
+
+            },
+
+            required: [
+              "beat_number",
+              "time_range",
+              "duration_seconds",
+              "location",
+              "evidence_ids",
+              "story_action",
+              "character_action",
+              "emotional_purpose",
+              "visual_priority",
+              "transition_to_next"
+            ]
+          }
+        }
+
+      },
+
+      required: [
+        "logline",
+        "opening_hook",
+        "emotional_arc",
+        "escalation",
+        "climax",
+        "ending_beat",
+        "pacing_strategy",
+        "beats"
+      ]
+    },
+
+    /* =====================================================
+       CONTINUITY SYSTEM
+    ===================================================== */
+
+    continuity_system: {
+
+      type: "object",
+
+      properties: {
+
+        character_continuity: {
+          type: "string"
+        },
+
+        face_continuity: {
+          type: "string"
+        },
+
+        body_continuity: {
+          type: "string"
+        },
+
+        costume_continuity: {
+          type: "string"
+        },
+
+        accessory_continuity: {
+          type: "string"
+        },
+
+        environment_continuity: {
+          type: "string"
+        },
+
+        lighting_continuity: {
+          type: "string"
+        },
+
+        temporal_continuity: {
+          type: "string"
+        },
+
+        geography_continuity: {
+          type: "string"
+        },
+
+        action_state_continuity: {
+          type: "string"
         },
 
         physics_continuity: {
-          type: "array",
-          items: { type: "string" }
+          type: "string"
         }
+
       },
 
       required: [
@@ -783,7 +1588,6 @@ const directorSchema = {
       ]
     },
 
-
     /* =====================================================
        DIRECTING RULES
     ===================================================== */
@@ -794,7 +1598,6 @@ const directorSchema = {
         type: "string"
       }
     },
-
 
     /* =====================================================
        QUALITY CONTROL
@@ -808,28 +1611,39 @@ const directorSchema = {
 
         mandatory_checks: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         forbidden_errors: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         continuity_checks: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         authenticity_checks: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         realism_checks: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         }
+
       },
 
       required: [
@@ -842,11 +1656,6 @@ const directorSchema = {
     }
 
   },
-
-
-  /* =====================================================
-     ROOT REQUIRED FIELDS
-  ===================================================== */
 
   required: [
     "project",
