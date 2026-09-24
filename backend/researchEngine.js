@@ -164,7 +164,7 @@ Return ONLY valid JSON matching the supplied schema.
 `;
 
   const response = await ai.interactions.create({
-    model:model: "gemini-3-flash-preview",
+    model: "gemini-3-flash-preview",
 
     input: researchInstruction,
 
