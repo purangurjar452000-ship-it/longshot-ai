@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LongShot AI</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0b12;
+      color: white;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 36px;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #aaa;
+      margin-bottom: 25px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 15px;
+      box-sizing: border-box;
+      border-radius: 12px;
+      border: 1px solid #333;
+      background: #171720;
+      color: white;
+      font-size: 16px;
+      resize: vertical;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    select, button {
+      flex: 1;
+      padding: 13px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+    }
+
+    select {
+      background: #171720;
+      color: white;
+      border: 1px solid #333;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #ffffff;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>LongShot AI</h1>
+
+    <div class="subtitle">
+      Create cinematic AI videos up to 30 seconds
+    </div>
+
+    <textarea id="prompt"
+      placeholder="Describe your video scene..."></textarea>
+
+    <div class="row">
+
+      <select id="duration">
+        <option value="20">20 Seconds</option>
+        <option value="25">25 Seconds</option>
+        <option value="30">30 Seconds</option>
+      </select>
+
+      <select id="aspectRatio">
+        <option value="9:16">9:16</option>
+        <option value="16:9">16:9</option>
+        <option value="1:1">1:1</option>
+      </select>
+
+    </div>
+
+    <button onclick="generateVideo()">
+      Generate Video
+    </button>
+
+    <div id="status">Ready.</div>
+
+  </div>
+
+  <script>
+
+    async function generateVideo() {
+
+      const prompt =
+        document.getElementById("prompt").value;
+
+      const duration =
+        document.getElementById("duration").value;
+
+      const aspectRatio =
+        document.getElementById("aspectRatio").value;
+
+      if (!prompt.trim()) {
+        document.getElementById("status").innerText =
+          "Please enter a video prompt.";
+        return;
+      }
+
+      document.getElementById("status").innerText =
+        "Generating video...";
+
+      try {
+
+        const response = await fetch("/api/generate", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            prompt,
+            duration,
+            aspectRatio
+          })
+
+        });
+
+        const data = await response.json();
+
+        document.getElementById("status").innerText =
+          data.status || data.error || "Request completed.";
+
+      } catch (error) {
+
+        document.getElementById("status").innerText =
+          "Connection error.";
+
+      }
+
+    }
+
+  </script>
+
+</body>
+</html>
