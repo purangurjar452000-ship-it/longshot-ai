@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LongShot AI</title>
+  <title>LongShot AI Research Test</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      padding: 20px;
       background: #0b0b12;
       color: white;
-      padding: 20px;
+      font-family: Arial, sans-serif;
     }
 
     .container {
@@ -19,53 +19,25 @@
       margin: auto;
     }
 
-    h1 {
-      font-size: 36px;
-      margin-bottom: 5px;
-    }
-
-    .subtitle {
-      color: #aaa;
-      margin-bottom: 25px;
-    }
-
     textarea {
       width: 100%;
-      height: 150px;
-      padding: 15px;
+      height: 140px;
       box-sizing: border-box;
+      padding: 15px;
+      background: #171720;
+      color: white;
+      border: 1px solid #333;
       border-radius: 12px;
-      border: 1px solid #333;
-      background: #171720;
-      color: white;
       font-size: 16px;
-      resize: vertical;
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    select, button {
-      flex: 1;
-      padding: 13px;
-      border-radius: 10px;
-      border: none;
-      font-size: 15px;
-    }
-
-    select {
-      background: #171720;
-      color: white;
-      border: 1px solid #333;
     }
 
     button {
-      margin-top: 20px;
-      background: #ffffff;
-      color: #000;
+      width: 100%;
+      margin-top: 15px;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
     }
@@ -74,101 +46,98 @@
       margin-top: 20px;
       color: #aaa;
     }
+
+    pre {
+      margin-top: 20px;
+      padding: 15px;
+      background: #111118;
+      border-radius: 10px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <h1>LongShot AI</h1>
+  <h1>LongShot AI</h1>
 
-    <div class="subtitle">
-      Create cinematic AI videos up to 30 seconds
-    </div>
+  <p>Research Engine Test</p>
 
-    <textarea id="prompt"
-      placeholder="Describe your video scene..."></textarea>
+  <textarea id="prompt"
+    placeholder="Enter your video idea..."></textarea>
 
-    <div class="row">
+  <button onclick="runResearch()">
+    Research Topic
+  </button>
 
-      <select id="duration">
-        <option value="20">20 Seconds</option>
-        <option value="25">25 Seconds</option>
-        <option value="30">30 Seconds</option>
-      </select>
+  <div id="status">Ready.</div>
 
-      <select id="aspectRatio">
-        <option value="9:16">9:16</option>
-        <option value="16:9">16:9</option>
-        <option value="1:1">1:1</option>
-      </select>
+  <pre id="result"></pre>
 
-    </div>
+</div>
 
-    <button onclick="generateVideo()">
-      Generate Video
-    </button>
+<script>
 
-    <div id="status">Ready.</div>
+async function runResearch() {
 
-  </div>
+  const prompt =
+    document.getElementById("prompt").value;
 
-  <script>
+  if (!prompt.trim()) {
+    document.getElementById("status").innerText =
+      "Please enter a topic.";
+    return;
+  }
 
-    async function generateVideo() {
+  document.getElementById("status").innerText =
+    "Researching...";
 
-      const prompt =
-        document.getElementById("prompt").value;
+  document.getElementById("result").innerText = "";
 
-      const duration =
-        document.getElementById("duration").value;
+  try {
 
-      const aspectRatio =
-        document.getElementById("aspectRatio").value;
+    const response = await fetch("/api/research", {
 
-      if (!prompt.trim()) {
-        document.getElementById("status").innerText =
-          "Please enter a video prompt.";
-        return;
-      }
+      method: "POST",
 
-      document.getElementById("status").innerText =
-        "Generating video...";
+      headers: {
+        "Content-Type": "application/json"
+      },
 
-      try {
+      body: JSON.stringify({
+        prompt
+      })
 
-        const response = await fetch("/api/generate", {
+    });
 
-          method: "POST",
+    const data = await response.json();
 
-          headers: {
-            "Content-Type": "application/json"
-          },
-
-          body: JSON.stringify({
-            prompt,
-            duration,
-            aspectRatio
-          })
-
-        });
-
-        const data = await response.json();
-
-        document.getElementById("status").innerText =
-          data.status || data.error || "Request completed.";
-
-      } catch (error) {
-
-        document.getElementById("status").innerText =
-          "Connection error.";
-
-      }
-
+    if (!response.ok) {
+      throw new Error(data.error || "Research failed.");
     }
 
-  </script>
+    document.getElementById("status").innerText =
+      "Research completed.";
+
+    document.getElementById("result").innerText =
+      JSON.stringify(data.research, null, 2);
+
+  } catch (error) {
+
+    document.getElementById("status").innerText =
+      "Research failed.";
+
+    document.getElementById("result").innerText =
+      error.message;
+
+  }
+
+}
+
+</script>
 
 </body>
 </html>
