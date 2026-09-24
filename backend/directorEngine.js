@@ -2235,33 +2235,72 @@ function extractImportantTerms(text) {
 
 function parseTimeRange(value) {
 
-  if (
-    typeof value !== "string"
-  ) {
-
+  if (typeof value !== "string") {
     return null;
   }
 
-  const match =
-    value.match(
-      /(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)/
-    );
+  const cleaned = value
+    .trim()
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, " ");
 
-  if (!match) {
+  // Format: 00:00 - 00:04
+  let match = cleaned.match(
+    /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/
+  );
 
-    return null;
+  if (match) {
+
+    const start =
+      Number(match[1]) * 60 +
+      Number(match[2]);
+
+    const end =
+      Number(match[3]) * 60 +
+      Number(match[4]);
+
+    return {
+      start,
+      end
+    };
   }
 
-  return {
+  // Format: 0:00 - 0:04
+  match = cleaned.match(
+    /(\d+):(\d+)\s*-\s*(\d+):(\d+)/
+  );
 
-    start:
-      Number(match[1]),
+  if (match) {
 
-    end:
-      Number(match[2])
-  };
+    const start =
+      Number(match[1]) * 60 +
+      Number(match[2]);
+
+    const end =
+      Number(match[3]) * 60 +
+      Number(match[4]);
+
+    return {
+      start,
+      end
+    };
+  }
+
+  // Format: 0 - 4
+  match = cleaned.match(
+    /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
+  );
+
+  if (match) {
+
+    return {
+      start: Number(match[1]),
+      end: Number(match[2])
+    };
+  }
+
+  return null;
 }
-
 
 /* =========================================================
    AUTO CORRECTION
