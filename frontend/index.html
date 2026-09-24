@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LongShot AI</title>
+</head>
+<body>
+
+  <h1>LongShot AI</h1>
+  <p>20–30 Second AI Video Generator</p>
+
+  <textarea id="prompt" placeholder="Describe your video..."></textarea>
+
+  <br><br>
+
+  <select id="duration">
+    <option value="20">20 Seconds</option>
+    <option value="25">25 Seconds</option>
+    <option value="30">30 Seconds</option>
+  </select>
+
+  <select id="aspectRatio">
+    <option value="9:16">9:16</option>
+    <option value="16:9">16:9</option>
+    <option value="1:1">1:1</option>
+  </select>
+
+  <br><br>
+
+  <button onclick="generateVideo()">Generate Video</button>
+
+  <p id="status">Ready.</p>
+
+  <script>
+    async function generateVideo() {
+      const prompt = document.getElementById("prompt").value;
+      const duration = document.getElementById("duration").value;
+      const aspectRatio = document.getElementById("aspectRatio").value;
+
+      if (!prompt.trim()) {
+        document.getElementById("status").innerText =
+          "Please enter a video prompt.";
+        return;
+      }
+
+      document.getElementById("status").innerText =
+        "Sending request...";
+
+      try {
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            prompt,
+            duration,
+            aspectRatio
+          })
+        });
+
+        const data = await response.json();
+
+        document.getElementById("status").innerText =
+          data.status || data.error || "Request completed.";
+      } catch (error) {
+        document.getElementById("status").innerText =
+          "Connection error.";
+      }
+    }
+  </script>
+
+</body>
+</html>
