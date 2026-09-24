@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="hi">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>LongShot AI - Director Test</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px;
+      box-sizing: border-box;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 10px;
+    }
+
+    select,
+    button {
+      margin-top: 12px;
+      padding: 12px 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    pre {
+      margin-top: 20px;
+      background: #000;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+
+
+<body>
+
+  <h1>🎬 LongShot AI</h1>
+
+  <p>Director Engine Test</p>
+
+
+  <textarea
+    id="prompt"
+    placeholder="अपना video idea लिखें..."
+  >हनुमान जी संजीवनी बूटी लेकर आए।</textarea>
+
+
+  <br>
+
+
+  <label>
+    Duration:
+  </label>
+
+  <select id="duration">
+
+    <option value="20">
+      20 seconds
+    </option>
+
+    <option value="25">
+      25 seconds
+    </option>
+
+    <option value="30">
+      30 seconds
+    </option>
+
+  </select>
+
+
+  <br>
+
+
+  <button onclick="runDirector()">
+    🚀 Run Director
+  </button>
+
+
+  <div id="status">
+    Ready
+  </div>
+
+
+  <pre id="output"></pre>
+
+
+<script>
+
+async function runDirector() {
+
+  const prompt =
+    document
+      .getElementById("prompt")
+      .value
+      .trim();
+
+  const duration =
+    Number(
+      document
+        .getElementById("duration")
+        .value
+    );
+
+
+  const status =
+    document.getElementById("status");
+
+  const output =
+    document.getElementById("output");
+
+
+  if (!prompt) {
+
+    status.textContent =
+      "❌ Please enter a video idea.";
+
+    return;
+  }
+
+
+  output.textContent = "";
+
+
+  try {
+
+    /* =========================================
+       STEP 1
+       RESEARCH ENGINE
+       ========================================= */
+
+    status.textContent =
+      "🔎 Research Engine चल रहा है...";
+
+
+    const researchResponse =
+      await fetch("/api/research", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+          prompt: prompt
+        })
+
+      });
+
+
+    const researchData =
+      await researchResponse.json();
+
+
+    if (!researchResponse.ok) {
+
+      throw new Error(
+        researchData.error ||
+        "Research Engine failed."
+      );
+
+    }
+
+
+    status.textContent =
+      "🧠 Research complete. Director Engine चल रहा है...";
+
+
+    /* =========================================
+       STEP 2
+       DIRECTOR ENGINE
+       ========================================= */
+
+    const directorResponse =
+      await fetch("/api/director", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+
+          research:
+            researchData.research,
+
+          duration:
+            duration,
+
+          aspectRatio:
+            "9:16"
+
+        })
+
+      });
+
+
+    const directorData =
+      await directorResponse.json();
+
+
+    if (!directorResponse.ok) {
+
+      throw new Error(
+        directorData.error ||
+        "Director Engine failed."
+      );
+
+    }
+
+
+    /* =========================================
+       SUCCESS
+       ========================================= */
+
+    status.textContent =
+      "🔥 Director Blueprint तैयार है!";
+
+
+    output.textContent =
+      JSON.stringify(
+        directorData.blueprint,
+        null,
+        2
+      );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    status.textContent =
+      "❌ Error";
+
+
+    output.textContent =
+      error.message;
+
+  }
+
+}
+
+</script>
+
+</body>
+
+</html>
