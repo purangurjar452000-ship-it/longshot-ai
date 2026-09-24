@@ -23,8 +23,7 @@ export async function generateVeoVideo(prompt, aspectRatio = "9:16") {
           }
         ],
         parameters: {
-          aspectRatio,
-          numberOfVideos: 1
+          aspectRatio
         }
       })
     }
