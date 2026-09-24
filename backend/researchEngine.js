@@ -167,12 +167,6 @@ Return ONLY valid JSON matching the supplied schema.
     model: "gemini-3.5-flash-lite",
     input: researchInstruction,
 
-    tools: [
-      {
-        type: "google_search"
-      }
-    ],
-
     response_format: {
       type: "text",
       mime_type: "application/json",
