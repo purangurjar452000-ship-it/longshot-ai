@@ -12,32 +12,136 @@ const ai = new GoogleGenAI({
 
 
 /* =========================================================
-   LONGSHOT AI
-   MASTER DIRECTOR ENGINE V3
-   ---------------------------------------------------------
-   Pipeline:
-
-   Research
-      ↓
-   Research Normalization
-      ↓
-   Fact Lock
-      ↓
-   Master Director
-      ↓
-   Self Audit
-      ↓
-   Continuity Validation
-      ↓
-   Final Blueprint
+   LONGSHOT AI — DIRECTOR ENGINE V4
+   Research → Fact Lock → Director → Validator → Correction
 ========================================================= */
 
 
 /* =========================================================
-   1. DIRECTOR OUTPUT SCHEMA
+   1. RESEARCH NORMALIZATION
+========================================================= */
+
+function normalizeResearch(researchData) {
+
+  if (!researchData || typeof researchData !== "object") {
+    throw new Error("Invalid research data.");
+  }
+
+  return {
+    topic: researchData.topic || "",
+    domain: researchData.domain || "general",
+
+    research_required:
+      Boolean(researchData.research_required),
+
+    research_summary:
+      researchData.research_summary || "",
+
+    verified_facts:
+      Array.isArray(researchData.verified_facts)
+        ? researchData.verified_facts
+        : [],
+
+    creative_reconstruction:
+      Array.isArray(researchData.creative_reconstruction)
+        ? researchData.creative_reconstruction
+        : [],
+
+    visual_research_notes:
+      Array.isArray(researchData.visual_research_notes)
+        ? researchData.visual_research_notes
+        : [],
+
+    authenticity_warnings:
+      Array.isArray(researchData.authenticity_warnings)
+        ? researchData.authenticity_warnings
+        : []
+  };
+}
+
+
+/* =========================================================
+   2. FACT LOCK
+========================================================= */
+
+function buildFactLock(research) {
+
+  return {
+
+    locked_facts:
+      research.verified_facts.map((item, index) => ({
+
+        evidence_id:
+          `FACT_${String(index + 1).padStart(3, "0")}`,
+
+        claim:
+          item.fact || "",
+
+        source_title:
+          item.source_title || "",
+
+        source_url:
+          item.source_url || "",
+
+        confidence:
+          item.confidence || "unknown",
+
+        status:
+          "VERIFIED_LOCKED"
+
+      })),
+
+    creative_reconstructions:
+      research.creative_reconstruction.map(
+        (item, index) => ({
+
+          evidence_id:
+            `CREATIVE_${String(index + 1).padStart(3, "0")}`,
+
+          description:
+            item,
+
+          status:
+            "CREATIVE_RECONSTRUCTION"
+
+        })
+      ),
+
+    visual_notes:
+      research.visual_research_notes.map(
+        (item, index) => ({
+
+          evidence_id:
+            `VISUAL_${String(index + 1).padStart(3, "0")}`,
+
+          description:
+            item,
+
+          status:
+            "RESEARCH_VISUAL_NOTE"
+
+        })
+      ),
+
+    authenticity_warnings:
+      research.authenticity_warnings.map(
+        (item, index) => ({
+
+          warning_id:
+            `WARNING_${String(index + 1).padStart(3, "0")}`,
+
+          description:
+            item
+
+        })
+      )
+  };
+}/* =========================================================
+   3. DIRECTOR SCHEMA
 ========================================================= */
 
 const directorSchema = {
+
   type: "object",
 
   properties: {
@@ -64,15 +168,25 @@ const directorSchema = {
       ]
     },
 
-
     evidence_policy: {
       type: "object",
-
       properties: {
 
-        verified_facts: {
+        locked_facts: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "object",
+            properties: {
+              evidence_id: { type: "string" },
+              claim: { type: "string" },
+              status: { type: "string" }
+            },
+            required: [
+              "evidence_id",
+              "claim",
+              "status"
+            ]
+          }
         },
 
         inferred_details: {
@@ -102,7 +216,7 @@ const directorSchema = {
       },
 
       required: [
-        "verified_facts",
+        "locked_facts",
         "inferred_details",
         "creative_reconstructions",
         "unknown_details",
@@ -111,12 +225,10 @@ const directorSchema = {
       ]
     },
 
-
     character_bible: {
       type: "array",
 
       items: {
-
         type: "object",
 
         properties: {
@@ -127,8 +239,9 @@ const directorSchema = {
             type: "string"
           },
 
-          identity_source: {
-            type: "string"
+          evidence_ids: {
+            type: "array",
+            items: { type: "string" }
           },
 
           physical_identity: {
@@ -225,7 +338,7 @@ const directorSchema = {
         required: [
           "name",
           "identity_status",
-          "identity_source",
+          "evidence_ids",
           "physical_identity",
           "body_proportions",
           "facial_structure",
@@ -252,19 +365,15 @@ const directorSchema = {
       }
     },
 
-
     world_bible: {
-
       type: "object",
 
       properties: {
 
         locations: {
-
           type: "array",
 
           items: {
-
             type: "object",
 
             properties: {
@@ -275,6 +384,11 @@ const directorSchema = {
 
               evidence_status: {
                 type: "string"
+              },
+
+              evidence_ids: {
+                type: "array",
+                items: { type: "string" }
               },
 
               environment: {
@@ -331,6 +445,7 @@ const directorSchema = {
             required: [
               "name",
               "evidence_status",
+              "evidence_ids",
               "environment",
               "terrain",
               "vegetation",
@@ -347,12 +462,10 @@ const directorSchema = {
           }
         },
 
-
         global_physical_rules: {
           type: "array",
           items: { type: "string" }
         },
-
 
         global_visual_rules: {
           type: "array",
@@ -367,9 +480,7 @@ const directorSchema = {
       ]
     },
 
-
     visual_language: {
-
       type: "object",
 
       properties: {
@@ -378,7 +489,11 @@ const directorSchema = {
           type: "string"
         },
 
-        camera_system: {
+        capture_system: {
+          type: "string"
+        },
+
+        visual_emulation: {
           type: "string"
         },
 
@@ -453,7 +568,8 @@ const directorSchema = {
 
       required: [
         "realism_target",
-        "camera_system",
+        "capture_system",
+        "visual_emulation",
         "lens_policy",
         "focal_length_strategy",
         "framing",
@@ -472,11 +588,7 @@ const directorSchema = {
         "motion_rendering",
         "vfx_philosophy"
       ]
-    },
-
-
-    story_blueprint: {
-
+    },    story_blueprint: {
       type: "object",
 
       properties: {
@@ -510,11 +622,9 @@ const directorSchema = {
         },
 
         beats: {
-
           type: "array",
 
           items: {
-
             type: "object",
 
             properties: {
@@ -527,8 +637,19 @@ const directorSchema = {
                 type: "string"
               },
 
+              duration_seconds: {
+                type: "number"
+              },
+
               location: {
                 type: "string"
+              },
+
+              evidence_ids: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
               },
 
               story_action: {
@@ -550,13 +671,14 @@ const directorSchema = {
               transition_to_next: {
                 type: "string"
               }
-
             },
 
             required: [
               "beat_number",
               "time_range",
+              "duration_seconds",
               "location",
+              "evidence_ids",
               "story_action",
               "character_action",
               "emotional_purpose",
@@ -579,6 +701,10 @@ const directorSchema = {
       ]
     },
 
+
+    /* =====================================================
+       CONTINUITY SYSTEM
+    ===================================================== */
 
     continuity_system: {
 
@@ -658,11 +784,21 @@ const directorSchema = {
     },
 
 
+    /* =====================================================
+       DIRECTING RULES
+    ===================================================== */
+
     directing_rules: {
       type: "array",
-      items: { type: "string" }
+      items: {
+        type: "string"
+      }
     },
 
+
+    /* =====================================================
+       QUALITY CONTROL
+    ===================================================== */
 
     quality_control: {
 
@@ -693,11 +829,6 @@ const directorSchema = {
         realism_checks: {
           type: "array",
           items: { type: "string" }
-        },
-
-        final_audit: {
-          type: "array",
-          items: { type: "string" }
         }
       },
 
@@ -706,12 +837,16 @@ const directorSchema = {
         "forbidden_errors",
         "continuity_checks",
         "authenticity_checks",
-        "realism_checks",
-        "final_audit"
+        "realism_checks"
       ]
     }
+
   },
 
+
+  /* =====================================================
+     ROOT REQUIRED FIELDS
+  ===================================================== */
 
   required: [
     "project",
@@ -724,139 +859,7 @@ const directorSchema = {
     "directing_rules",
     "quality_control"
   ]
-};
-
-
-/* =========================================================
-   2. RESEARCH NORMALIZER
-========================================================= */
-
-function normalizeResearch(researchData) {
-
-  if (!researchData || typeof researchData !== "object") {
-    throw new Error("Invalid research data.");
-  }
-
-  const verified =
-    Array.isArray(researchData.verified_facts)
-      ? researchData.verified_facts
-      : [];
-
-  const creative =
-    Array.isArray(researchData.creative_reconstruction)
-      ? researchData.creative_reconstruction
-      : [];
-
-  const visual =
-    Array.isArray(researchData.visual_research_notes)
-      ? researchData.visual_research_notes
-      : [];
-
-  const warnings =
-    Array.isArray(researchData.authenticity_warnings)
-      ? researchData.authenticity_warnings
-      : [];
-
-  return {
-
-    topic:
-      researchData.topic || "",
-
-    domain:
-      researchData.domain || "general",
-
-    research_required:
-      Boolean(researchData.research_required),
-
-    research_summary:
-      researchData.research_summary || "",
-
-    verified_facts:
-      verified.map((item, index) => ({
-        id: `FACT_${String(index + 1).padStart(3, "0")}`,
-        fact: item.fact || "",
-        source_title: item.source_title || "",
-        source_url: item.source_url || "",
-        confidence: item.confidence || "unknown"
-      })),
-
-    creative_reconstruction:
-      creative,
-
-    visual_research_notes:
-      visual,
-
-    authenticity_warnings:
-      warnings
-  };
-}
-
-
-/* =========================================================
-   3. FACT LOCK
-========================================================= */
-
-function buildFactLock(research) {
-
-  const lockedFacts =
-    research.verified_facts.map(item => ({
-
-      id: item.id,
-
-      status: "VERIFIED_LOCKED",
-
-      fact: item.fact,
-
-      source: item.source_title,
-
-      source_url: item.source_url,
-
-      confidence: item.confidence,
-
-      director_rule:
-        "This fact must not be renamed, contradicted, silently replaced or upgraded into a different factual claim."
-    }));
-
-
-  return {
-
-    topic: research.topic,
-
-    domain: research.domain,
-
-    LOCKED_VERIFIED_FACTS:
-      lockedFacts,
-
-    CREATIVE_RECONSTRUCTIONS:
-      research.creative_reconstruction,
-
-    VISUAL_RESEARCH_NOTES:
-      research.visual_research_notes,
-
-    AUTHENTICITY_WARNINGS:
-      research.authenticity_warnings,
-
-    CLASSIFICATION_RULES: [
-
-      "VERIFIED = directly supported by supplied research.",
-
-      "INFERRED = reasonable interpretation derived from verified information.",
-
-      "CREATIVE_RECONSTRUCTION = cinematic invention used when source material does not specify a visual detail.",
-
-      "UNKNOWN = not established by supplied research.",
-
-      "Never present creative reconstruction as verified fact.",
-
-      "Never silently replace a verified entity with a popular-culture alternative.",
-
-      "When sources conflict, preserve the conflict instead of inventing certainty."
-    ]
-  };
-}
-
-
-/* =========================================================
+};/* =========================================================
    4. MASTER DIRECTOR INSTRUCTIONS
 ========================================================= */
 
@@ -864,664 +867,679 @@ const MASTER_DIRECTOR_INSTRUCTIONS = `
 
 You are the MASTER DIRECTOR of LongShot AI.
 
-Your job is to transform researched information into
-a production-grade cinematic blueprint.
+Your responsibility is to transform researched factual
+material into a production-ready cinematic blueprint.
 
-You are the creative brain of the system.
+You are NOT the final video generator.
 
-The blueprint will later be consumed by:
-
-1. Scene Planner
-2. Shot Planner
-3. Veo Prompt Composer
-4. Video Generation Engine
-
-Therefore every decision must be precise,
-consistent and executable.
-
+You are the creative director, continuity supervisor,
+visual realism supervisor, story architect and
+fact-integrity supervisor.
 
 =========================================================
-CORE PRIORITY ORDER
+CORE PIPELINE
 =========================================================
 
-Always prioritize:
-
-1. Story clarity
-2. Verified research
-3. Authenticity
-4. Character continuity
-5. Physical realism
-6. World continuity
-7. Cinematography
-8. Visual spectacle
-9. Creative embellishment
-
+RESEARCH
+→ FACT LOCK
+→ DIRECTOR
+→ PROGRAMMATIC VALIDATOR
+→ AUTO CORRECTION IF REQUIRED
+→ FINAL BLUEPRINT
 
 =========================================================
-FACT LOCK — ABSOLUTE
+1. FACT LOCK — ABSOLUTE PRIORITY
 =========================================================
 
-The FACT LOCK is protected information.
+The supplied FACT LOCK is authoritative.
 
-A VERIFIED_LOCKED_FACT is immutable.
+Every item marked VERIFIED_LOCKED is immutable.
 
-You must not:
+You MUST NOT:
 
-- rename it
-- replace it
-- contradict it
-- merge it with another entity
-- silently substitute another tradition
-- transform a source-supported event into a different event
-
-Example:
+- rename a verified person
+- rename a verified location
+- replace a verified object
+- change a verified relationship
+- change a verified event
+- change a verified sequence
+- introduce a contradictory fact
+- silently replace one traditional version with another
 
 If the research says:
 
-"Dronagiri"
+Dronagiri
 
-the final blueprint must not say:
+you MUST NOT output:
 
-"Gandhamadana"
+Gandhamadana
 
-unless the supplied research itself establishes a genuine
-tradition/source conflict.
+unless the research itself explicitly contains a
+documented contradiction that must be represented.
 
-If there is a conflict, explicitly record it.
-
+When sources disagree, preserve the disagreement rather
+than silently selecting one version.
 
 =========================================================
-EVIDENCE DISCIPLINE
+2. EVIDENCE CLASSIFICATION
 =========================================================
 
-Every important piece of information must belong to:
+Every important factual or visual claim must belong to
+one of these categories:
 
 VERIFIED
 INFERRED
 CREATIVE_RECONSTRUCTION
 UNKNOWN
 
-VERIFIED:
+Use VERIFIED only when supported by the supplied
+locked evidence.
 
-Directly supported by the supplied research.
+Use INFERRED only when logically derived from evidence.
 
-INFERRED:
+Use CREATIVE_RECONSTRUCTION for cinematic details that
+are not explicitly established by the evidence.
 
-Reasonably derived from supplied information.
+Use UNKNOWN when the available material does not support
+a reliable conclusion.
 
-CREATIVE_RECONSTRUCTION:
-
-A deliberate filmmaking choice.
-
-UNKNOWN:
-
-Not established.
-
-Never convert UNKNOWN into VERIFIED.
-
-Never convert CREATIVE_RECONSTRUCTION into VERIFIED.
-
+Never present creative reconstruction as historical,
+scientific or scriptural fact.
 
 =========================================================
-MYTHOLOGY / HISTORY AUTHENTICITY
+3. EVIDENCE TRACEABILITY
 =========================================================
 
-When the domain is mythology or history:
+Important claims must reference evidence IDs.
 
-Separate:
+Examples:
 
-- source-supported events
-- traditional interpretation
-- inferred details
-- cinematic reconstruction
-- popular modern imagery
+FACT_001
+FACT_002
+CREATIVE_001
+VISUAL_001
 
-Do not treat popular visual culture as primary evidence.
+Character and world details should reference the
+evidence that supports them whenever possible.
 
-Do not add invented objects, clothing, architecture,
-jewelry or geography and then describe them as documented.
+Do NOT create fake evidence IDs.
 
+Only use IDs supplied by the FACT LOCK.
 
 =========================================================
-CHARACTER BIBLE
+4. CHARACTER DIRECTING
 =========================================================
 
-Every major character receives a persistent identity.
+Build a complete character bible.
 
-The character bible must describe:
+Every major character must have a stable visual identity.
 
-- physical proportions
+Maintain:
+
 - facial structure
-- face
-- eyes
-- hair/fur
-- skin/body texture
-- anatomy
+- body proportions
 - musculature
+- skin or fur characteristics
+- hair or fur pattern
+- eye characteristics
 - hands
 - fingers
 - nails
 - feet
 - toes
-- joints
+- body weight
+- posture
 - breathing
+- blinking
 - micro-expressions
+- movement signature
 - costume
-- fabric/material
-- accessories
-- movement
-- emotional behavior
+- costume materials
+- accessory placement
 
-Characters must feel physically real.
+Physical appearance must remain consistent between
+all scenes.
+
+Do not randomly change:
+
+- face
+- body size
+- hairstyle
+- fur pattern
+- costume
+- jewelry
+- armor
+- age appearance
+- skin/fur texture
+
+=========================================================
+5. HUMAN / CREATURE REALISM
+=========================================================
+
+Characters must look physically present in the real world.
 
 Avoid:
 
 - plastic skin
-- synthetic skin
-- wax appearance
-- generic AI face
-- over-smoothed features
-- floating hair
-- impossible anatomy
-- weightless limbs
+- wax-like faces
+- artificial CGI appearance
+- perfectly smooth skin
+- frozen expressions
+- weightless movement
+- rubber-like limbs
+- impossible joints
+- deformed hands
+- missing fingers
+- extra fingers
+- malformed feet
 
+Include realistic:
 
-=========================================================
-FACE CONTINUITY
-=========================================================
+- skin pores
+- fine texture
+- natural imperfections
+- muscle tension
+- tendon movement
+- breathing
+- blinking
+- eye moisture
+- natural weight transfer
+- joint mechanics
+- cloth interaction
+- environmental interaction
 
-Once a character identity is established:
-
-Do not change:
-
-- facial proportions
-- eye spacing
-- nose structure
-- jaw structure
-- skin/fur pattern
-- hairline
-- facial markings
-- age appearance
-
-unless the story explicitly requires transformation.
-
-
-=========================================================
-HAND AND FOOT REALISM
-=========================================================
-
-Hands and feet are high-risk AI areas.
-
-Direct the downstream system to preserve:
-
-- correct finger count
-- correct finger joints
-- realistic nails
-- believable knuckles
-- natural grip
-- realistic palm anatomy
-- correct toe count
-- realistic foot contact
-- natural weight distribution
-
+For non-human mythological beings, preserve their
+traditional identity while keeping physical rendering
+convincingly tangible.
 
 =========================================================
-BODY MECHANICS
+6. MOVEMENT PHYSICS
 =========================================================
 
-Movement must respect:
+All physical movement must respect:
 
 - gravity
-- momentum
 - inertia
+- momentum
 - acceleration
 - deceleration
 - balance
-- joint mechanics
-- muscle contraction
 - weight transfer
 - contact forces
+- collision
+- environmental resistance
 
-When a supernatural action occurs,
-the supernatural event may break ordinary limitations,
-but the physical rendering must remain coherent.
+If supernatural movement is required by the story,
+the supernatural element should be intentional and
+visually coherent.
 
-
-=========================================================
-BREATHING AND MICRO-MOVEMENT
-=========================================================
-
-Characters should not look frozen.
-
-Where appropriate include:
-
-- breathing
-- subtle chest movement
-- blinking
-- eye tracking
-- tiny posture corrections
-- muscle tension
-- fabric response
-- hair/fur response
-- environmental interaction
-
+Do not accidentally create physically inconsistent motion.
 
 =========================================================
-COSTUME SYSTEM
+7. HANDS AND FEET
 =========================================================
 
-Costumes are persistent.
+Hands and feet require special attention.
 
-Define:
+Maintain:
 
-- material
+- correct anatomy
+- correct finger count
+- correct toe count
+- believable joints
+- natural gripping
+- realistic pressure
+- realistic contact with objects
+- realistic nails
+- realistic skin folds
+
+Avoid distorted fingers and impossible grips.
+
+=========================================================
+8. COSTUME AND MATERIAL REALISM
+=========================================================
+
+Costumes must behave like real physical materials.
+
+Specify where useful:
+
+- fabric type
 - thickness
-- texture
-- stitching
+- weight
+- weave
 - folds
-- wear
+- wrinkles
+- tension
+- friction
 - dirt
 - moisture
-- wind response
-- tension
+- wear
+- damage
 
-Costume must remain consistent unless the story changes it.
+Jewelry, armor and weapons must respond naturally
+to movement.
 
-
-=========================================================
-ACCESSORY SYSTEM
-=========================================================
-
-Jewelry, armor and weapons must:
-
-- remain attached
-- maintain consistent size
-- maintain consistent location
-- react to movement
-- have believable weight
-- interact with clothing and body
-
-Do not randomly add or remove accessories.
-
+Do not allow accessories to randomly disappear,
+change position or change design between scenes.
 
 =========================================================
-WORLD BIBLE
+9. WORLD BUILDING
 =========================================================
 
-Each location must maintain:
+Create a stable world bible.
+
+For every important location define:
 
 - geography
 - terrain
 - vegetation
 - architecture
+- props
 - atmosphere
 - weather
-- props
 - time
 - celestial conditions
 - lighting
-- physical rules
+- environmental physics
 
-Do not randomly change the environment between beats.
+Separate documented facts from cinematic reconstruction.
 
+Do not invent historical or scriptural details and label
+them as verified.
 
 =========================================================
-ENVIRONMENTAL PHYSICS
+10. ENVIRONMENTAL PHYSICS
 =========================================================
 
-Environment must react physically.
+Environment must react naturally.
 
-Wind affects:
+Consider:
 
-- cloth
-- hair
-- fur
-- leaves
+- wind
 - dust
 - smoke
-
-Rain affects:
-
-- skin
-- fur
-- fabric
-- ground
-- reflective surfaces
-
-Footsteps affect:
-
-- dust
-- soil
-- grass
+- rain
 - water
+- mud
+- vegetation
+- fire
+- cloth
+- hair/fur
+- debris
+- shadows
+- atmospheric haze
 
-Objects must cast appropriate shadows.
+Environmental reactions must follow the action.
 
-Smoke and mist must respect airflow.
+For example:
 
-=========================================================
-TIME CONTINUITY
-=========================================================
-
-Create one coherent timeline.
-
-Never describe the same moment as both:
-
-"deep midnight"
-
-and
-
-"pre-dawn"
-
-without an explicit transition.
-
-Every story beat must fit inside the requested duration.
-
-Do not compress physically impossible amounts of action
-into a tiny time window without deliberately treating it
-as mythological/supernatural narrative compression.
-
+A powerful movement should affect nearby dust,
+cloth, vegetation or loose objects when physically
+appropriate.
 
 =========================================================
-GEOGRAPHIC CONTINUITY
+11. TIME CONTINUITY
 =========================================================
 
-If the story moves between locations:
+Choose one coherent temporal state.
 
-define:
+Do not create contradictory descriptions such as:
 
-- departure location
-- travel state
-- destination
-- environmental transition
+"midnight"
 
-Do not suddenly teleport a character unless the story
-explicitly requires supernatural teleportation.
+and simultaneously:
 
+"pre-dawn sunrise"
 
-=========================================================
-STORY ARCHITECTURE
-=========================================================
+unless the story explicitly depicts that transition.
 
-Short videos require efficient storytelling.
+Time progression must be intentional.
 
-The story should have:
+Maintain consistency of:
 
-HOOK
-↓
-SETUP
-↓
-ESCALATION
-↓
-CLIMAX
-↓
-ENDING BEAT
-
-Avoid unnecessary exposition.
-
-Every beat must visually communicate something.
-
+- moon position
+- sky brightness
+- shadows
+- artificial light
+- atmospheric color
+- sunrise/sunset state
 
 =========================================================
-EMOTIONAL DIRECTION
+12. GEOGRAPHY CONTINUITY
 =========================================================
 
-Direct emotional progression.
+Locations must remain geographically coherent.
 
-Use:
+Do not silently change:
 
-- facial expression
-- posture
-- gaze
-- movement speed
-- breathing
-- body tension
-- environment
-- lighting
+- mountain identity
+- city
+- battlefield
+- forest
+- direction of travel
+- environmental type
 
-Do not rely only on dialogue to communicate emotion.
-
+If the story requires rapid supernatural travel,
+represent the transition deliberately.
 
 =========================================================
-CINEMATOGRAPHY
+13. STORY DIRECTING
 =========================================================
 
-Think like a professional cinematographer.
+Create a strong cinematic narrative.
 
-Define:
+The sequence should contain:
 
-- camera system
-- lens
-- focal length
+- opening hook
+- setup
+- escalation
+- emotional development
+- climax
+- ending beat
+
+Every beat must contribute to the story.
+
+Do not waste the limited duration on unnecessary
+establishing shots.
+
+=========================================================
+14. DURATION MANAGEMENT
+=========================================================
+
+Respect the requested duration exactly.
+
+For:
+
+20 seconds → total beats must equal 20 seconds.
+
+25 seconds → total beats must equal 25 seconds.
+
+30 seconds → total beats must equal 30 seconds.
+
+Do not create hidden extra time.
+
+Avoid forcing multiple major actions into a single
+very short beat unless the action is intentionally
+compressed by the story.
+
+=========================================================
+15. CINEMATOGRAPHY
+=========================================================
+
+Direct the sequence like a professional cinematic
+production.
+
+Specify where useful:
+
+- shot scale
 - framing
 - camera height
-- movement
-- focus
+- camera movement
+- lens choice
+- focal length
+- focus behavior
 - depth of field
 - motion rendering
-- shutter behavior
-- composition
+- perspective
 
 Camera movement must have narrative purpose.
 
+Avoid random:
+
+- zooms
+- whip pans
+- drone movements
+- extreme lens changes
 
 =========================================================
-LENS LANGUAGE
+16. CAMERA CONSISTENCY
 =========================================================
 
-Do not randomly change focal length.
+Keep camera language coherent.
 
-Wide lenses:
+Separate:
 
-Use for scale and environment.
+CAPTURE SYSTEM
 
-Normal lenses:
+from:
 
-Use for natural human perspective.
+VISUAL EMULATION.
 
-Long lenses:
+Do NOT create contradictions such as claiming a digital
+cinema camera is simultaneously physical film stock.
 
-Use for compression, isolation or distant observation.
+Example:
 
-Macro/close lenses:
+capture_system:
+digital large-format cinema camera
 
-Use for important micro-details.
+visual_emulation:
+subtle 35mm filmic rendering
 
-Every lens decision must support the story.
-
+This is acceptable.
 
 =========================================================
-LIGHTING
+17. LIGHTING
 =========================================================
 
-Lighting must obey the environment.
+Lighting must be physically believable.
 
 Define:
 
 - key light
 - fill
-- practical sources
-- rim
-- ambient light
+- rim light
+- practical lights
+- moonlight
+- firelight
+- atmospheric light
 - shadow direction
-- intensity
-- color relationship
 
-Do not create contradictory shadows.
+Light must interact correctly with:
 
+- skin
+- fur
+- fabric
+- metal
+- stone
+- water
+- dust
 
 =========================================================
-COLOR SCIENCE
+18. COLOR SCIENCE
 =========================================================
 
-Use a consistent cinematic color language.
+Use cinematic color intentionally.
+
+Avoid excessive:
+
+- saturation
+- bloom
+- artificial glow
+- crushed blacks
+- neon highlights
 
 Color should support:
 
 - emotion
-- location
+- environment
 - time
-- atmosphere
-- narrative escalation
-
-Do not randomly change grading between shots.
-
+- story progression
 
 =========================================================
-REALISM TARGET
+19. VFX PHILOSOPHY
 =========================================================
 
-The final image should resemble:
+VFX should support realism.
 
-real physical subjects
-captured by a professional cinema camera
+Do not automatically add:
 
-rather than:
+- magical particles
+- giant energy fields
+- glowing eyes
+- excessive aura
+- fantasy smoke
+- artificial lens flares
 
-CGI characters
-game characters
-cartoon characters
-plastic models
-generic AI imagery
-
+Only use supernatural visual effects when justified
+by the story or clearly marked creative reconstruction.
 
 =========================================================
-AI ERROR PREVENTION
+20. MYTHOLOGY / HISTORY AUTHENTICITY
 =========================================================
 
-The blueprint must actively prevent:
+For mythology and history:
 
+Prioritize the supplied evidence.
+
+Distinguish:
+
+- primary textual description
+- traditional interpretation
+- later interpretation
+- popular representation
+- cinematic reconstruction
+
+Never allow popular visual culture to override
+locked evidence.
+
+=========================================================
+21. SCIENCE AUTHENTICITY
+=========================================================
+
+For science topics:
+
+Do not introduce scientifically impossible details
+unless the story explicitly requires fiction.
+
+Clearly distinguish:
+
+- established science
+- inference
+- visualization
+- fictional reconstruction
+
+=========================================================
+22. AI ERROR PREVENTION
+=========================================================
+
+Actively prevent common generative-video errors:
+
+- changing faces
+- changing costumes
+- changing body proportions
 - extra fingers
 - missing fingers
 - malformed hands
 - malformed feet
-- duplicated limbs
-- changing faces
-- changing body proportions
-- changing costume
-- changing accessories
-- floating jewelry
-- floating weapons
-- impossible shadows
-- inconsistent lighting
-- geometry morphing
-- texture popping
-- random props
-- random background changes
-- unexplained character duplication
-- random weather changes
-- random time changes
-- plastic skin
-- artificial eyes
-- frozen expressions
-- weightless movement
-=========================================================
-SELF AUDIT
-=========================================================
-
-Before final output perform an internal audit.
-
-Check:
-
-1. Did I contradict a locked fact?
-
-2. Did I rename an entity?
-
-3. Did I substitute a different tradition?
-
-4. Did I invent a detail?
-
-5. If invented, did I classify it correctly?
-
-6. Did I accidentally call a creative reconstruction a fact?
-
-7. Is the timeline coherent?
-
-8. Are locations coherent?
-
-9. Are characters consistent?
-
-10. Are costumes consistent?
-
-11. Are accessories consistent?
-
-12. Are physical movements believable?
-
-13. Is lighting coherent?
-
-14. Is geography coherent?
-
-15. Does the story fit the requested duration?
-
-16. Can Scene Planner execute it?
-
-17. Can Veo understand it?
-
-18. Are AI failure modes explicitly controlled?
-
+- floating objects
+- object duplication
+- inconsistent shadows
+- impossible reflections
+- disappearing accessories
+- teleporting characters
+- sudden location changes
+- inconsistent weather
+- inconsistent time
+- random camera language
 
 =========================================================
-CORRECTION RULE
+23. CONTINUITY STATE
 =========================================================
 
-If any self-audit check fails:
+Every beat must logically inherit the previous beat.
 
-DO NOT return the flawed blueprint.
+Track:
 
-Correct it internally first.
+character_state
+costume_state
+location_state
+lighting_state
+time_state
+weather_state
+action_state
+emotional_state
+object_state
 
-Then return only the corrected blueprint.
-
+A later beat must not contradict an earlier state.
 
 =========================================================
-FINAL DIRECTOR PRINCIPLE
+24. SELF-CHECK BEFORE OUTPUT
 =========================================================
 
-Accuracy before imagination.
+Before producing the blueprint, internally inspect:
 
-Continuity before spectacle.
+1. Fact integrity
+2. Evidence classification
+3. Evidence traceability
+4. Character continuity
+5. Costume continuity
+6. Location continuity
+7. Geography continuity
+8. Time continuity
+9. Lighting continuity
+10. Physics continuity
+11. Story continuity
+12. Duration
+13. Camera consistency
+14. Lens consistency
+15. Realism
+16. Anatomy
+17. VFX restraint
+18. AI error prevention
 
-Physics before visual effects.
+If a conflict is found:
 
-Story before decoration.
+CORRECT IT BEFORE OUTPUT.
 
-The final blueprint must stand independently
-without requiring the original user prompt to be repeated.
-`;
+Do not merely claim that the conflict was checked.
+
+=========================================================
+25. FINAL DIRECTOR PRINCIPLE
+=========================================================
+
+The final blueprint must be:
+
+FACTUALLY CONTROLLED
++
+CINEMATICALLY POWERFUL
++
+PHYSICALLY BELIEVABLE
++
+VISUALLY CONSISTENT
++
+TEMPORALLY CONSISTENT
++
+PRODUCTION READY.
+
+Never sacrifice factual integrity for cinematic style.
+
+Never sacrifice physical realism for unnecessary visual
+spectacle.
+
+Never sacrifice continuity for individual impressive shots.
+
+`;/* =========================================================
+   5. DIRECTOR ENGINE + PROGRAMMATIC VALIDATOR
+========================================================= */
 
 
 /* =========================================================
-   5. CREATE DIRECTOR BLUEPRINT
+   RUN DIRECTOR
 ========================================================= */
 
-export async function createDirectorBlueprint(
-  researchData,
-  duration = 20,
-  aspectRatio = "9:16"
+async function runDirector(
+  research,
+  factLock,
+  duration,
+  aspectRatio
 ) {
 
-  if (!researchData) {
-    throw new Error("Research data is required.");
-  }
-
-
-  if (![20, 25, 30].includes(Number(duration))) {
-    duration = 20;
-  }
-
-
-  const normalizedResearch =
-    normalizeResearch(researchData);
-
-
-  const factLock =
-    buildFactLock(normalizedResearch);
-
-
   const directorInput = `
+${MASTER_DIRECTOR_INSTRUCTIONS}
 
 =========================================================
-PROJECT PARAMETERS
+REQUESTED PRODUCTION SETTINGS
 =========================================================
 
 Duration:
@@ -1530,64 +1548,828 @@ ${duration} seconds
 Aspect Ratio:
 ${aspectRatio}
 
+=========================================================
+RESEARCH DATA
+=========================================================
+
+${JSON.stringify(research, null, 2)}
 
 =========================================================
 FACT LOCK
 =========================================================
 
-${JSON.stringify(
-  factLock,
-  null,
-  2
-)}
-
+${JSON.stringify(factLock, null, 2)}
 
 =========================================================
-NORMALIZED RESEARCH
+FINAL INSTRUCTION
 =========================================================
 
-${JSON.stringify(
-  normalizedResearch,
-  null,
-  2
-)}
+Create the complete LongShot AI Director Blueprint.
 
+IMPORTANT:
 
-=========================================================
-DIRECTOR TASK
-=========================================================
-
-Create the complete MASTER DIRECTOR BLUEPRINT.
-
-The blueprint must:
-
-- respect the Fact Lock
-- preserve verified entities
-- classify evidence
-- build persistent character identities
-- build persistent world rules
-- create coherent story beats
-- establish cinematic language
-- establish physical realism
-- establish environmental physics
-- establish continuity rules
-- establish AI failure prevention
-- perform a complete self-audit
-- correct detected problems before returning
+- Use only supplied evidence IDs.
+- Never invent evidence IDs.
+- Never replace locked facts.
+- Clearly classify unsupported visual details.
+- Keep character continuity strict.
+- Keep world continuity strict.
+- Keep time continuity strict.
+- Keep geography continuity strict.
+- Keep physical movement believable.
+- Separate camera capture from visual emulation.
+- Respect the exact requested duration.
+- Do not claim an audit passed unless the blueprint
+  actually satisfies the requirements.
 
 Return ONLY valid JSON matching the supplied schema.
+`;
+
+  const response = await ai.interactions.create({
+
+    model: "gemini-3.5-flash-lite",
+
+    input: directorInput,
+
+    response_format: {
+      type: "text",
+      mime_type: "application/json",
+      schema: directorSchema
+    }
+  });
+
+  if (!response.output_text) {
+    throw new Error(
+      "Director Engine returned empty output."
+    );
+  }
+
+  try {
+
+    return JSON.parse(response.output_text);
+
+  } catch (error) {
+
+    throw new Error(
+      "Director Engine returned invalid JSON."
+    );
+  }
+}
+
+
+/* =========================================================
+   UTILITY FUNCTIONS
+========================================================= */
+
+function collectAllStrings(value, result = []) {
+
+  if (typeof value === "string") {
+
+    result.push(value);
+
+    return result;
+  }
+
+  if (Array.isArray(value)) {
+
+    for (const item of value) {
+      collectAllStrings(item, result);
+    }
+
+    return result;
+  }
+
+  if (value && typeof value === "object") {
+
+    for (const key of Object.keys(value)) {
+
+      collectAllStrings(value[key], result);
+    }
+  }
+
+  return result;
+}
+
+
+function collectEvidenceIds(value) {
+
+  const ids = new Set();
+
+  function walk(item) {
+
+    if (!item) return;
+
+    if (Array.isArray(item)) {
+
+      for (const child of item) {
+        walk(child);
+      }
+
+      return;
+    }
+
+    if (typeof item === "object") {
+
+      for (const [key, child] of Object.entries(item)) {
+
+        if (
+          key === "evidence_ids" &&
+          Array.isArray(child)
+        ) {
+
+          for (const id of child) {
+
+            if (typeof id === "string") {
+              ids.add(id);
+            }
+          }
+        }
+
+        walk(child);
+      }
+    }
+  }
+
+  walk(value);
+
+  return [...ids];
+}
+
+
+/* =========================================================
+   PROGRAMMATIC VALIDATOR
+========================================================= */
+
+function validateBlueprint(
+  blueprint,
+  research,
+  factLock,
+  duration,
+  aspectRatio
+) {
+
+  const errors = [];
+  const warnings = [];
+
+  if (!blueprint || typeof blueprint !== "object") {
+
+    errors.push(
+      "Blueprint is missing or invalid."
+    );
+
+    return {
+      passed: false,
+      errors,
+      warnings
+    };
+  }
+
+
+  /* -------------------------------------------------------
+     1. ROOT STRUCTURE
+  ------------------------------------------------------- */
+
+  const requiredRootSections = [
+    "project",
+    "evidence_policy",
+    "character_bible",
+    "world_bible",
+    "visual_language",
+    "story_blueprint",
+    "continuity_system",
+    "directing_rules",
+    "quality_control"
+  ];
+
+  for (const section of requiredRootSections) {
+
+    if (
+      blueprint[section] === undefined ||
+      blueprint[section] === null
+    ) {
+
+      errors.push(
+        `Missing required section: ${section}`
+      );
+    }
+  }
+
+
+  /* -------------------------------------------------------
+     2. PROJECT SETTINGS
+  ------------------------------------------------------- */
+
+  if (
+    blueprint.project?.duration_seconds !== duration
+  ) {
+
+    errors.push(
+      `Duration mismatch. Expected ${duration}, got ${blueprint.project?.duration_seconds}`
+    );
+  }
+
+  if (
+    blueprint.project?.aspect_ratio !== aspectRatio
+  ) {
+
+    errors.push(
+      `Aspect ratio mismatch. Expected ${aspectRatio}, got ${blueprint.project?.aspect_ratio}`
+    );
+  }
+
+
+  /* -------------------------------------------------------
+     3. FACT LOCK INTEGRITY
+  ------------------------------------------------------- */
+
+  const lockedFacts =
+    factLock.locked_facts || [];
+
+  const allBlueprintText =
+    collectAllStrings(blueprint).join("\n").toLowerCase();
+
+
+  for (const fact of lockedFacts) {
+
+    const claim =
+      String(fact.claim || "")
+        .trim()
+        .toLowerCase();
+
+    if (!claim) continue;
+
+    /*
+      We do not require the entire sentence to appear
+      verbatim.
+
+      Instead, protect important named entities extracted
+      from the claim.
+    */
+
+    const importantTerms =
+      extractImportantTerms(claim);
+
+    for (const term of importantTerms) {
+
+      if (
+        !allBlueprintText.includes(term)
+      ) {
+
+        errors.push(
+          `Locked fact entity missing or possibly replaced: "${term}" (${fact.evidence_id})`
+        );
+      }
+    }
+  }
+
+
+  /* -------------------------------------------------------
+     4. INVALID / FAKE EVIDENCE IDS
+  ------------------------------------------------------- */
+
+  const validEvidenceIds =
+    new Set([
+      ...lockedFacts.map(
+        item => item.evidence_id
+      ),
+
+      ...(factLock.creative_reconstructions || [])
+        .map(item => item.evidence_id),
+
+      ...(factLock.visual_notes || [])
+        .map(item => item.evidence_id)
+    ]);
+
+  const usedEvidenceIds =
+    collectEvidenceIds(blueprint);
+
+  for (const id of usedEvidenceIds) {
+
+    if (!validEvidenceIds.has(id)) {
+
+      errors.push(
+        `Unknown evidence ID used: ${id}`
+      );
+    }
+  }
+
+
+  /* -------------------------------------------------------
+     5. CHARACTER TRACEABILITY
+  ------------------------------------------------------- */
+
+  if (
+    Array.isArray(blueprint.character_bible)
+  ) {
+
+    for (
+      const character
+      of blueprint.character_bible
+    ) {
+
+      if (
+        !Array.isArray(character.evidence_ids)
+      ) {
+
+        errors.push(
+          `Character "${character.name}" has no evidence_ids array.`
+        );
+
+        continue;
+      }
+
+      /*
+        A character may contain creative visual design,
+        therefore absence of evidence is not automatically
+        a factual error.
+
+        But every character must explicitly declare
+        evidence linkage or UNKNOWN.
+      */
+
+      if (
+        character.evidence_ids.length === 0 &&
+        !String(
+          character.identity_status || ""
+        ).toLowerCase().includes("unknown")
+      ) {
+
+        warnings.push(
+          `Character "${character.name}" has no linked evidence IDs.`
+        );
+      }
+    }
+  }
+
+
+  /* -------------------------------------------------------
+     6. WORLD TRACEABILITY
+  ------------------------------------------------------- */
+
+  const locations =
+    blueprint.world_bible?.locations || [];
+
+  if (Array.isArray(locations)) {
+
+    for (const location of locations) {
+
+      if (
+        !Array.isArray(location.evidence_ids)
+      ) {
+
+        errors.push(
+          `Location "${location.name}" has no evidence_ids array.`
+        );
+      }
+
+      const status =
+        String(
+          location.evidence_status || ""
+        ).toLowerCase();
+
+      if (
+        status.includes("verified") &&
+        (!location.evidence_ids ||
+          location.evidence_ids.length === 0)
+      ) {
+
+        errors.push(
+          `Location "${location.name}" is marked verified without evidence.`
+        );
+      }
+    }
+  }
+
+
+  /* -------------------------------------------------------
+     7. CAMERA CONSISTENCY
+  ------------------------------------------------------- */
+
+  const visual =
+    blueprint.visual_language || {};
+
+  const capture =
+    String(
+      visual.capture_system || ""
+    ).toLowerCase();
+
+  const emulation =
+    String(
+      visual.visual_emulation || ""
+    ).toLowerCase();
+
+
+  /*
+    Prevent the exact contradiction discovered in V3:
+    digital camera + literal physical film stock.
+  */
+
+  const digitalCameraTerms = [
+    "arri alexa",
+    "red camera",
+    "sony venice",
+    "digital cinema",
+    "large-format digital"
+  ];
+
+  const literalFilmTerms = [
+    "shot on 35mm film",
+    "captured on 35mm film",
+    "shot on 65mm film",
+    "captured on 65mm film",
+    "physical 35mm film stock"
+  ];
+
+  const digitalCapture =
+    digitalCameraTerms.some(
+      term => capture.includes(term)
+    );
+
+  const literalFilm =
+    literalFilmTerms.some(
+      term =>
+        capture.includes(term) ||
+        emulation.includes(term)
+    );
+
+  if (
+    digitalCapture &&
+    literalFilm &&
+    !emulation.includes("emulation")
+  ) {
+
+    errors.push(
+      "Camera contradiction: digital capture is described together with literal physical film capture."
+    );
+  }
+
+
+  /* -------------------------------------------------------
+     8. TIMELINE VALIDATION
+  ------------------------------------------------------- */
+
+  const beats =
+    blueprint.story_blueprint?.beats || [];
+
+  if (!Array.isArray(beats) || beats.length === 0) {
+
+    errors.push(
+      "Story blueprint contains no beats."
+    );
+
+  } else {
+
+    const totalBeatDuration =
+      beats.reduce(
+        (sum, beat) =>
+          sum +
+          Number(
+            beat.duration_seconds || 0
+          ),
+        0
+      );
+
+    if (
+      totalBeatDuration !== duration
+    ) {
+
+      errors.push(
+        `Beat duration mismatch. Expected ${duration}s, got ${totalBeatDuration}s.`
+      );
+    }
+
+
+    /*
+      Validate sequential time ranges where possible.
+    */
+
+    let previousEnd = 0;
+
+    for (const beat of beats) {
+
+      const range =
+        parseTimeRange(
+          beat.time_range
+        );
+
+      if (!range) {
+
+        warnings.push(
+          `Could not parse time range for beat ${beat.beat_number}.`
+        );
+
+        continue;
+      }
+
+      if (
+        Math.abs(range.start - previousEnd) > 0.01
+      ) {
+
+        errors.push(
+          `Timeline gap/overlap around beat ${beat.beat_number}.`
+        );
+      }
+
+      previousEnd = range.end;
+    }
+
+    if (
+      Math.abs(previousEnd - duration) > 0.01
+    ) {
+
+      errors.push(
+        "Timeline does not end exactly at the requested duration."
+      );
+    }
+  }
+
+
+  /* -------------------------------------------------------
+     9. REQUIRED CONTINUITY SYSTEM
+  ------------------------------------------------------- */
+
+  const continuity =
+    blueprint.continuity_system || {};
+
+  const continuityFields = [
+    "character_continuity",
+    "face_continuity",
+    "body_continuity",
+    "costume_continuity",
+    "accessory_continuity",
+    "environment_continuity",
+    "lighting_continuity",
+    "temporal_continuity",
+    "geography_continuity",
+    "action_state_continuity",
+    "physics_continuity"
+  ];
+
+  for (const field of continuityFields) {
+
+    if (
+      !Array.isArray(continuity[field]) ||
+      continuity[field].length === 0
+    ) {
+
+      errors.push(
+        `Continuity system missing: ${field}`
+      );
+    }
+  }
+
+
+  /* -------------------------------------------------------
+     10. REALISM REQUIREMENTS
+  ------------------------------------------------------- */
+
+  const characters =
+    blueprint.character_bible || [];
+
+  if (Array.isArray(characters)) {
+
+    for (const character of characters) {
+
+      const requiredRealismFields = [
+        "anatomy",
+        "hands_and_fingers",
+        "feet_and_toes",
+        "breathing",
+        "micro_expressions",
+        "costume_physics",
+        "movement_signature"
+      ];
+
+      for (
+        const field
+        of requiredRealismFields
+      ) {
+
+        if (
+          !character[field] ||
+          String(character[field]).trim() === ""
+        ) {
+
+          errors.push(
+            `Character "${character.name}" missing realism field: ${field}`
+          );
+        }
+      }
+    }
+  }
+
+
+  /* -------------------------------------------------------
+     FINAL RESULT
+  ------------------------------------------------------- */
+
+  return {
+
+    passed:
+      errors.length === 0,
+
+    errors,
+
+    warnings
+  };
+}
+
+
+/* =========================================================
+   IMPORTANT TERM EXTRACTION
+========================================================= */
+
+function extractImportantTerms(text) {
+
+  const stopWords = new Set([
+
+    "the",
+    "and",
+    "was",
+    "were",
+    "with",
+    "from",
+    "that",
+    "this",
+    "when",
+    "during",
+    "using",
+    "into",
+    "back",
+    "over",
+    "under",
+    "after",
+    "before",
+    "their",
+    "they",
+    "them",
+    "which",
+    "specific",
+    "powerful",
+    "entire",
+    "massive",
+    "critical",
+    "severely",
+    "needed",
+    "mentioned",
+    "identified",
+    "according",
+    "described"
+  ]);
+
+  return text
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter(
+      word =>
+        word.length >= 5 &&
+        !stopWords.has(word)
+    )
+    .slice(0, 12);
+}
+
+
+/* =========================================================
+   TIME RANGE PARSER
+========================================================= */
+
+function parseTimeRange(value) {
+
+  if (
+    typeof value !== "string"
+  ) {
+
+    return null;
+  }
+
+  const match =
+    value.match(
+      /(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)/
+    );
+
+  if (!match) {
+
+    return null;
+  }
+
+  return {
+
+    start:
+      Number(match[1]),
+
+    end:
+      Number(match[2])
+  };
+}
+
+
+/* =========================================================
+   AUTO CORRECTION
+========================================================= */
+
+async function autoCorrectBlueprint(
+  blueprint,
+  validation,
+  research,
+  factLock,
+  duration,
+  aspectRatio
+) {
+
+  const correctionInstruction = `
+
+You are the CORRECTION DIRECTOR of LongShot AI.
+
+A Director Blueprint was generated but failed
+programmatic validation.
+
+Your job is to correct ONLY the detected problems.
+
+Do not redesign the project unnecessarily.
+
+Do not remove cinematic detail unless required.
+
+Do not replace locked facts.
+
+Do not invent new evidence.
+
+=========================================================
+RESEARCH
+=========================================================
+
+${JSON.stringify(research, null, 2)}
+
+=========================================================
+FACT LOCK
+=========================================================
+
+${JSON.stringify(factLock, null, 2)}
+
+=========================================================
+CURRENT BLUEPRINT
+=========================================================
+
+${JSON.stringify(blueprint, null, 2)}
+
+=========================================================
+VALIDATION ERRORS
+=========================================================
+
+${JSON.stringify(validation.errors, null, 2)}
+
+=========================================================
+VALIDATION WARNINGS
+=========================================================
+
+${JSON.stringify(validation.warnings, null, 2)}
+
+=========================================================
+CORRECTION RULES
+=========================================================
+
+1. Preserve all valid information.
+
+2. Correct factual entity mismatches.
+
+3. Restore locked evidence references.
+
+4. Never create fake evidence IDs.
+
+5. Correct timeline gaps and overlaps.
+
+6. Make beat durations total exactly
+   ${duration} seconds.
+
+7. Keep aspect ratio exactly:
+   ${aspectRatio}
+
+8. Correct camera/capture contradictions.
+
+9. Separate physical capture from visual emulation.
+
+10. Correct unsupported details by marking them
+    as inferred, creative reconstruction or unknown.
+
+11. Preserve character continuity.
+
+12. Preserve world continuity.
+
+13. Preserve physical realism.
+
+14. Do not claim validation passed.
+
+Return ONLY the corrected JSON blueprint.
 `;
 
 
   const response =
     await ai.interactions.create({
 
-      model: "gemini-3.5-flash-lite",
+      model:
+        "gemini-3.5-flash-lite",
 
       input:
-        MASTER_DIRECTOR_INSTRUCTIONS +
-        "\n\n" +
-        directorInput,
+        correctionInstruction,
 
       response_format: {
         type: "text",
@@ -1598,72 +2380,157 @@ Return ONLY valid JSON matching the supplied schema.
 
 
   if (!response.output_text) {
+
     throw new Error(
-      "Director engine returned empty output."
+      "Correction Engine returned empty output."
     );
   }
 
 
   try {
 
-    const blueprint =
-      JSON.parse(response.output_text);
-
-
-    /*
-      Final lightweight programmatic safety checks.
-      These do not replace the AI self-audit.
-    */
-
-    if (
-      !blueprint.project ||
-      !blueprint.character_bible ||
-      !blueprint.world_bible ||
-      !blueprint.story_blueprint ||
-      !blueprint.continuity_system ||
-      !blueprint.quality_control
-    ) {
-
-      throw new Error(
-        "Director blueprint is structurally incomplete."
-      );
-    }
-
-
-    if (
-      Number(
-        blueprint.project.duration_seconds
-      ) !== Number(duration)
-    ) {
-
-      throw new Error(
-        "Director returned an incorrect project duration."
-      );
-    }
-
-
-    if (
-      blueprint.project.aspect_ratio !== aspectRatio
-    ) {
-
-      throw new Error(
-        "Director returned an incorrect aspect ratio."
-      );
-    }
-
-
-    return blueprint;
+    return JSON.parse(
+      response.output_text
+    );
 
   } catch (error) {
 
-    console.error(
-      "Director JSON / Validation Error:",
-      error
-    );
-
     throw new Error(
-      error.message ||
-      "Director engine returned invalid JSON."
+      "Correction Engine returned invalid JSON."
     );
   }
+}
+
+
+/* =========================================================
+   PUBLIC DIRECTOR FUNCTION
+========================================================= */
+
+export async function createDirectorBlueprint(
+  researchData,
+  duration = 20,
+  aspectRatio = "9:16"
+) {
+
+  const research =
+    normalizeResearch(
+      researchData
+    );
+
+
+  const factLock =
+    buildFactLock(
+      research
+    );
+
+
+  /*
+    First Director generation
+  */
+
+  let blueprint =
+    await runDirector(
+      research,
+      factLock,
+      duration,
+      aspectRatio
+    );
+
+
+  /*
+    First programmatic validation
+  */
+
+  let validation =
+    validateBlueprint(
+      blueprint,
+      research,
+      factLock,
+      duration,
+      aspectRatio
+    );
+
+
+  /*
+    Auto-correction pass
+  */
+
+  if (!validation.passed) {
+
+    blueprint =
+      await autoCorrectBlueprint(
+        blueprint,
+        validation,
+        research,
+        factLock,
+        duration,
+        aspectRatio
+      );
+
+
+    /*
+      Validate corrected blueprint again.
+    */
+
+    validation =
+      validateBlueprint(
+        blueprint,
+        research,
+        factLock,
+        duration,
+        aspectRatio
+      );
+  }
+
+
+  /*
+    Hard failure if blueprint still invalid.
+  */
+
+  if (!validation.passed) {
+
+    const errorMessage =
+      validation.errors.join(
+        " | "
+      );
+
+    throw new Error(
+      `Director Blueprint failed validation after auto-correction: ${errorMessage}`
+    );
+  }
+
+
+  /*
+    Attach machine-generated validation metadata.
+
+    This is NOT generated by the AI.
+    It comes from the actual validator.
+  */
+
+  blueprint._longshot_validation = {
+
+    validator_version:
+      "V4",
+
+    passed:
+      true,
+
+    auto_corrected:
+      true,
+
+    errors_after_validation:
+      [],
+
+    warnings:
+      validation.warnings,
+
+    validated_duration:
+      duration,
+
+    validated_aspect_ratio:
+      aspectRatio
+  };
+
+
+  return blueprint;
 }
