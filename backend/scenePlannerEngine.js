@@ -1,6 +1,8 @@
 function parseTimeRange(value) {
+  const match = String(value || "")
   const cleaned = String(value || "")
     .replace(/[–—−]/g, "-")
+    .match(/(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)/i);
     .trim();
 
   const clockMatch = cleaned.match(
@@ -9,13 +11,8 @@ function parseTimeRange(value) {
 
   if (clockMatch) {
     return {
-      start:
-        Number(clockMatch[1]) * 60 +
-        Number(clockMatch[2]),
-
-      end:
-        Number(clockMatch[3]) * 60 +
-        Number(clockMatch[4])
+      start: Number(clockMatch[1]) * 60 + Number(clockMatch[2]),
+      end: Number(clockMatch[3]) * 60 + Number(clockMatch[4])
     };
   }
 
@@ -23,9 +20,7 @@ function parseTimeRange(value) {
     /^(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)$/i
   );
 
-  if (!match) {
-    return null;
-  }
+  if (!match) return null;
 
   return {
     start: Number(match[1]),
@@ -106,6 +101,7 @@ function buildNegativePrompt() {
   return [
     "canonical name changes",
     "Dronagiri renamed as Gandhamadana",
+    "canonical location renamed without research support",
     "invented healing or recovery",
     "invented characters or events",
     "face morphing",
@@ -183,6 +179,10 @@ function validateScenePlan(plan, blueprint, expectedDuration, aspectRatio) {
     planText.includes("gandhamadana")
   ) {
     errors.push("Dronagiri was replaced by the Gandhamadana alias.");
+  for (const location of locations) {
+    if (!planText.includes(location.toLowerCase())) {
+      errors.push(`Canonical location is missing from the scene plan: ${location}.`);
+    }
   }
 
   if (
