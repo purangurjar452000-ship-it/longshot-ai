@@ -3,11 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>LongShot AI - Director Test</title>
 
@@ -47,6 +43,12 @@
       cursor: pointer;
     }
 
+    #scenePlannerButton {
+      display: none;
+      background: #ff9800;
+      font-weight: bold;
+    }
+
     #status {
       margin-top: 20px;
       font-weight: bold;
@@ -64,222 +66,175 @@
   </style>
 </head>
 
-
 <body>
 
   <h1>🎬 LongShot AI</h1>
 
   <p>Director Engine Test</p>
 
-
   <textarea
     id="prompt"
     placeholder="अपना video idea लिखें..."
   >हनुमान जी संजीवनी बूटी लेकर आए।</textarea>
 
-
   <br>
 
-
-  <label>
-    Duration:
-  </label>
+  <label>Duration:</label>
 
   <select id="duration">
-
-    <option value="20">
-      20 seconds
-    </option>
-
-    <option value="25">
-      25 seconds
-    </option>
-
-    <option value="30">
-      30 seconds
-    </option>
-
+    <option value="20">20 seconds</option>
+    <option value="25">25 seconds</option>
+    <option value="30">30 seconds</option>
   </select>
 
-
   <br>
-
 
   <button onclick="runDirector()">
     🚀 Run Director
   </button>
 
+  <button
+    id="scenePlannerButton"
+    onclick="openScenePlanner()"
+  >
+    🎬 Open Scene Planner
+  </button>
 
-  <div id="status">
-    Ready
-  </div>
-
+  <div id="status">Ready</div>
 
   <pre id="output"></pre>
 
+  <script>
+    async function runDirector() {
+      const prompt =
+        document
+          .getElementById("prompt")
+          .value
+          .trim();
 
-<script>
+      const duration =
+        Number(
+          document
+            .getElementById("duration")
+            .value
+        );
 
-async function runDirector() {
+      const status =
+        document.getElementById("status");
 
-  const prompt =
-    document
-      .getElementById("prompt")
-      .value
-      .trim();
+      const output =
+        document.getElementById("output");
 
-  const duration =
-    Number(
-      document
-        .getElementById("duration")
-        .value
-    );
+      const scenePlannerButton =
+        document.getElementById("scenePlannerButton");
 
+      if (!prompt) {
+        status.textContent =
+          "❌ Please enter a video idea.";
+        return;
+      }
 
-  const status =
-    document.getElementById("status");
+      output.textContent = "";
+      scenePlannerButton.style.display = "none";
 
-  const output =
-    document.getElementById("output");
+      try {
+        status.textContent =
+          "🔎 Research Engine चल रहा है...";
 
+        const researchResponse =
+          await fetch("/api/research", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              prompt
+            })
+          });
 
-  if (!prompt) {
+        const researchData =
+          await researchResponse.json();
 
-    status.textContent =
-      "❌ Please enter a video idea.";
+        if (!researchResponse.ok) {
+          throw new Error(
+            researchData.error ||
+            "Research Engine failed."
+          );
+        }
 
-    return;
-  }
+        status.textContent =
+          "🧠 Research complete. Director Engine चल रहा है...";
 
+        const directorResponse =
+          await fetch("/api/director", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              research: researchData.research,
+              duration,
+              aspectRatio: "9:16"
+            })
+          });
 
-  output.textContent = "";
+        const directorData =
+          await directorResponse.json();
 
+        if (!directorResponse.ok) {
+          throw new Error(
+            directorData.error ||
+            "Director Engine failed."
+          );
+        }
 
-  try {
+        const blueprint =
+          directorData.blueprint;
 
-    /* =========================================
-       STEP 1
-       RESEARCH ENGINE
-       ========================================= */
+        sessionStorage.setItem(
+          "longshot_director_blueprint",
+          JSON.stringify(blueprint)
+        );
 
-    status.textContent =
-      "🔎 Research Engine चल रहा है...";
+        sessionStorage.setItem(
+          "longshot_duration",
+          String(duration)
+        );
 
+        sessionStorage.setItem(
+          "longshot_aspect_ratio",
+          "9:16"
+        );
 
-    const researchResponse =
-      await fetch("/api/research", {
+        status.textContent =
+          "🔥 Director Blueprint तैयार है!";
 
-        method: "POST",
+        output.textContent =
+          JSON.stringify(
+            blueprint,
+            null,
+            2
+          );
 
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
+        scenePlannerButton.style.display =
+          "inline-block";
 
-        body: JSON.stringify({
-          prompt: prompt
-        })
+      } catch (error) {
+        console.error(error);
 
-      });
+        status.textContent =
+          "❌ Error";
 
-
-    const researchData =
-      await researchResponse.json();
-
-
-    if (!researchResponse.ok) {
-
-      throw new Error(
-        researchData.error ||
-        "Research Engine failed."
-      );
-
+        output.textContent =
+          error.message;
+      }
     }
 
-
-    status.textContent =
-      "🧠 Research complete. Director Engine चल रहा है...";
-
-
-    /* =========================================
-       STEP 2
-       DIRECTOR ENGINE
-       ========================================= */
-
-    const directorResponse =
-      await fetch("/api/director", {
-
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-
-        body: JSON.stringify({
-
-          research:
-            researchData.research,
-
-          duration:
-            duration,
-
-          aspectRatio:
-            "9:16"
-
-        })
-
-      });
-
-
-    const directorData =
-      await directorResponse.json();
-
-
-    if (!directorResponse.ok) {
-
-      throw new Error(
-        directorData.error ||
-        "Director Engine failed."
-      );
-
+    function openScenePlanner() {
+      window.location.href =
+        "/scene-planner-test.html";
     }
-
-
-    /* =========================================
-       SUCCESS
-       ========================================= */
-
-    status.textContent =
-      "🔥 Director Blueprint तैयार है!";
-
-
-    output.textContent =
-      JSON.stringify(
-        directorData.blueprint,
-        null,
-        2
-      );
-
-
-  } catch (error) {
-
-    console.error(error);
-
-
-    status.textContent =
-      "❌ Error";
-
-
-    output.textContent =
-      error.message;
-
-  }
-
-}
-
-</script>
+  </script>
 
 </body>
-
 </html>
