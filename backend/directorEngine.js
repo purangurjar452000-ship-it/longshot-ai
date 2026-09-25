@@ -841,6 +841,13 @@ const directorSchema = {
                 type: "string"
               },
 
+              characters: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              },
+
               evidence_ids: {
                 type: "array",
                 items: {
@@ -875,6 +882,7 @@ const directorSchema = {
               "time_range",
               "duration_seconds",
               "location",
+              "characters",
               "evidence_ids",
               "story_action",
               "character_action",
@@ -1811,6 +1819,11 @@ IMPORTANT:
 - Keep time continuity strict.
 - Keep geography continuity strict.
 - Keep physical movement believable.
+- Every story beat must contain an explicit characters array.
+- Include every named person, creature, object or agent that visibly acts in that beat.
+- Every character listed in a beat must have a matching character_bible entry.
+- Never mention a character in story_action or character_action while omitting that character from the beat characters array.
+- Preserve the exact character names from character_bible.
 - Separate camera capture from visual emulation.
 - Respect the exact requested duration.
 - Do not claim an audit passed unless the blueprint
@@ -2066,7 +2079,34 @@ function validateSemanticEvidence(blueprint, factLock) {
    PROGRAMMATIC VALIDATOR
 ========================================================= */
 
-function validateBlueprint(
+
+/* =========================================================
+   BEAT CHARACTER COVERAGE VALIDATION
+========================================================= */
+
+function validateBeatCharacterCoverage(blueprint) {
+  const errors = [];
+  const characterNames = new Set(
+    (blueprint.character_bible || [])
+      .map((item) => String(item?.name || "").trim())
+      .filter(Boolean)
+  );
+  const beats = blueprint.story_blueprint?.beats || [];
+  for (const beat of beats) {
+    const listedCharacters = Array.isArray(beat.characters)
+      ? beat.characters
+      : [];
+    for (const name of listedCharacters) {
+      if (!characterNames.has(name)) {
+        errors.push(`Beat ${beat.beat_number} uses character "${name}" without a matching character_bible entry.`);
+      }
+    }
+    if (listedCharacters.length === 0) {
+      errors.push(`Beat ${beat.beat_number} has no explicit characters array.`);
+    }
+  }
+  return errors;
+}function validateBlueprint(
   blueprint,
   research,
   factLock,
@@ -2536,7 +2576,11 @@ function validateBlueprint(
      FINAL RESULT
   ------------------------------------------------------- */
 
-  return {
+    errors.push(
+    ...validateBeatCharacterCoverage(blueprint)
+  );
+
+return {
 
     passed:
       errors.length === 0,
@@ -2971,3 +3015,5 @@ export async function createDirectorBlueprint(
 
   return blueprint;
 }
+
+
