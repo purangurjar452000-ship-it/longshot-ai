@@ -7,6 +7,7 @@ import { researchTopic } from "./researchEngine.js";
 import { createDirectorBlueprint } from "./directorEngine.js";
 import { createScenePlan } from "./scenePlannerEngine.js";
 import { createVideoGenerationJobs } from "./videoGenerationEngine.js";
+import { generateVideoFromJob } from "./videoProviderAdapter.js";
 
 const app = express();
 
@@ -16,14 +17,10 @@ const __dirname = path.dirname(__filename);
 app.use(cors());
 app.use(express.json());
 
-app.use(
-  express.static(
-    path.join(__dirname, "public")
-  )
-);
+app.use(express.static(path.join(__dirname, "public")));
 
 /* =========================================================
-   STATUS
+STATUS
 ========================================================= */
 
 app.get("/api/status", (req, res) => {
@@ -34,7 +31,7 @@ app.get("/api/status", (req, res) => {
 });
 
 /* =========================================================
-   RESEARCH ENGINE
+RESEARCH ENGINE
 ========================================================= */
 
 app.post("/api/research", async (req, res) => {
@@ -53,7 +50,6 @@ app.post("/api/research", async (req, res) => {
       status: "research_completed",
       research
     });
-
   } catch (error) {
     console.error("Research Error:", error);
 
@@ -64,7 +60,7 @@ app.post("/api/research", async (req, res) => {
 });
 
 /* =========================================================
-   DIRECTOR ENGINE
+DIRECTOR ENGINE
 ========================================================= */
 
 app.post("/api/director", async (req, res) => {
@@ -91,7 +87,6 @@ app.post("/api/director", async (req, res) => {
       status: "director_completed",
       blueprint
     });
-
   } catch (error) {
     console.error("Director Error:", error);
 
@@ -102,7 +97,7 @@ app.post("/api/director", async (req, res) => {
 });
 
 /* =========================================================
-   SCENE PLANNER ENGINE
+SCENE PLANNER ENGINE
 ========================================================= */
 
 app.post("/api/scene-planner", async (req, res) => {
@@ -129,7 +124,6 @@ app.post("/api/scene-planner", async (req, res) => {
       status: "scene_plan_completed",
       scenePlan
     });
-
   } catch (error) {
     console.error("Scene Planner Error:", error);
 
@@ -138,46 +132,47 @@ app.post("/api/scene-planner", async (req, res) => {
     });
   }
 });
+
+/* =========================================================
+VIDEO JOBS ENGINE
+========================================================= */
+
 app.post("/api/video-jobs", (req, res) => {
   try {
     const {
-  scenePlan,
-  directorBlueprint,
-  provider,
-  model
-} = req.body;
+      scenePlan,
+      directorBlueprint,
+      provider,
+      model
+    } = req.body;
 
     if (!scenePlan) {
-      if (!directorBlueprint) {
-  return res.status(400).json({
-    error: "Director Blueprint is required"
-  });
-}
       return res.status(400).json({
         error: "Scene Plan is required"
       });
     }
 
-   const videoJobs =
-  createVideoGenerationJobs(
-    scenePlan,
-    {
-      directorBlueprint,
-      provider: provider || "provider-neutral",
-      model: model || null
+    if (!directorBlueprint) {
+      return res.status(400).json({
+        error: "Director Blueprint is required"
+      });
     }
-  );
+
+    const videoJobs = createVideoGenerationJobs(
+      scenePlan,
+      {
+        directorBlueprint,
+        provider: provider || "provider-neutral",
+        model: model || null
+      }
+    );
 
     res.json({
       status: "video_jobs_created",
       videoJobs
     });
-
   } catch (error) {
-    console.error(
-      "Video Job Error:",
-      error
-    );
+    console.error("Video Job Error:", error);
 
     res.status(500).json({
       error: error.message
@@ -186,13 +181,48 @@ app.post("/api/video-jobs", (req, res) => {
 });
 
 /* =========================================================
-   SERVER
+VIDEO PROVIDER ADAPTER
+========================================================= */
+
+app.post("/api/generate-video", async (req, res) => {
+  try {
+    const {
+      job,
+      provider
+    } = req.body;
+
+    if (!job) {
+      return res.status(400).json({
+        error: "Video job is required"
+      });
+    }
+
+    const result = await generateVideoFromJob(
+      job,
+      {
+        provider: provider || job.provider || "mock"
+      }
+    );
+
+    res.json({
+      status: "video_generation_completed",
+      result
+    });
+  } catch (error) {
+    console.error("Video Generation Error:", error);
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+/* =========================================================
+SERVER
 ========================================================= */
 
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
-  console.log(
-    `LongShot AI running on port ${PORT}`
-  );
+  console.log(`LongShot AI running on port ${PORT}`);
 });
