@@ -8,11 +8,9 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({
   apiKey: API_KEY
-});
-
 
 /* =========================================================
-   LONGSHOT AI — DIRECTOR ENGINE V4.1
+   LONGSHOT AI — DIRECTOR ENGINE V4.2
    Research → Fact Lock → Director → Validator → Correction
 ========================================================= */
 
@@ -1179,6 +1177,10 @@ IDENTITY AND VISUAL EVIDENCE ARE SEPARATE
 - Mark a visual_claim VERIFIED only when its cited locked fact or visual research note directly supports that specific claim.
 - A location evidence_status verifies the location identity only; it does not verify terrain, vegetation, architecture, lighting or other visual details.
 - Set visual_design_status to VERIFIED only when every visual_claim is independently VERIFIED.
+- For every major character, create separate visual_claim entries covering at least: face, eyes, hair_or_fur, costume, anatomy, accessories and movement. Do not hide these details only inside prose fields.
+- For every location, create separate visual_claim entries covering at least: environment, terrain, vegetation, architecture, props, atmosphere, weather and lighting_conditions.
+- Preserve the exact canonical names supplied by the FACT LOCK. Do not substitute a traditional alias such as Gandhamadana for a locked name such as Dronagiri, or vice versa.
+- If the fact says Hanuman could not identify the individual herbs, state that explicitly and show him lifting the entire locked mountain; do not imply that he identified the mountain or herbs by appearance.
 
 =========================================================
 4. CHARACTER DIRECTING
@@ -1790,7 +1792,11 @@ IMPORTANT:
 - Clearly classify unsupported visual details.
 - Keep identity_status separate from visual_design_status.
 - Add field-level visual_claims for character appearance and location details.
+- Add separate visual_claims for face, eyes, hair_or_fur, costume, anatomy, accessories and movement for every major character.
+- Add separate visual_claims for environment, terrain, vegetation, architecture, props, atmosphere, weather and lighting_conditions for every location.
 - Do not mark a visual_claim VERIFIED unless its cited evidence directly supports it.
+- Preserve every canonical person, object and location name exactly as written in the FACT LOCK, including Dronagiri when that is the locked name.
+- Explicitly state that Hanuman cannot identify the individual herbs and therefore lifts the entire locked mountain.
 - Keep character continuity strict.
 - Keep world continuity strict.
 - Keep time continuity strict.
@@ -1983,6 +1989,20 @@ function validateSemanticEvidence(blueprint, factLock) {
       return;
     }
 
+    const claimText = entity.visual_claims
+      .map(item => String(item?.claim || "").toLowerCase())
+      .join(" ");
+
+    const requiredVisualGroups = label.startsWith("Character")
+      ? ["face", "eye", "fur", "hair", "costume", "anatom", "accessor", "movement"]
+      : ["environment", "terrain", "veget", "architect", "prop", "atmospher", "weather", "lighting"];
+
+    for (const group of requiredVisualGroups) {
+      if (!claimText.includes(group)) {
+        errors.push(label + " is missing a field-level visual claim for " + group + ".");
+      }
+    }
+
     for (const item of entity.visual_claims) {
       const claim = String(item?.claim || "").trim();
       const classification = String(item?.classification || "").toUpperCase();
@@ -2026,6 +2046,10 @@ function validateSemanticEvidence(blueprint, factLock) {
   for (const character of blueprint.character_bible || []) {
     const label = "Character " + JSON.stringify(character?.name || "(unnamed)");
     inspectClaims(character || {}, label);
+
+    if (String(character?.identity_status || "").toUpperCase() === "HISTORICAL_IDENTITY_VERIFIED") {
+      errors.push(label + " uses HISTORICAL_IDENTITY_VERIFIED; mythological figures must use MYTHOLOGICAL_IDENTITY_VERIFIED unless the research explicitly establishes historical identity.");
+    }
 
     if (character?.visual_design_status === "VERIFIED") {
       const claims = Array.isArray(character.visual_claims) ? character.visual_claims : [];
@@ -2751,6 +2775,12 @@ CORRECTION RULES
 
 14. Do not claim validation passed.
 
+15. Preserve exact locked names; never replace Dronagiri with Gandhamadana or another alias when Dronagiri is the locked fact.
+
+16. Add field-level claims for every required character and location visual group.
+
+17. State clearly that Hanuman could not identify the individual herbs and lifted the entire locked mountain.
+
 15. Keep character identity separate from visual appearance.
 
 16. Correct each visual_claim classification against its own cited evidence.
@@ -2909,7 +2939,7 @@ export async function createDirectorBlueprint(
   blueprint._longshot_validation = {
 
     validator_version:
-      "V4.1",
+      "V4.2",
 
     passed:
       true,
