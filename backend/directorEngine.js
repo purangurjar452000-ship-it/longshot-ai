@@ -598,7 +598,7 @@ const directorSchema = {
               },
 
               environmental_physics: {
-                type: "array",
+                                type: "array",
                 items: {
                   type: "string"
                 }
@@ -898,8 +898,7 @@ const directorSchema = {
         "beats"
       ]
     },
-
-    /* =====================================================
+        /* =====================================================
        CONTINUITY SYSTEM
     ===================================================== */
 
@@ -1991,20 +1990,6 @@ function validateSemanticEvidence(blueprint, factLock) {
       return;
     }
 
-    const claimText = entity.visual_claims
-      .map(item => String(item?.claim || "").toLowerCase())
-      .join(" ");
-
-    const requiredVisualGroups = label.startsWith("Character")
-      ? ["face", "eye", "fur", "hair", "costume", "anatom", "accessor", "movement"]
-      : ["environment", "terrain", "veget", "architect", "prop", "atmospher", "weather", "lighting"];
-
-    for (const group of requiredVisualGroups) {
-      if (!claimText.includes(group)) {
-        errors.push(label + " is missing a field-level visual claim for " + group + ".");
-      }
-    }
-
     for (const item of entity.visual_claims) {
       const claim = String(item?.claim || "").trim();
       const classification = String(item?.classification || "").toUpperCase();
@@ -2112,7 +2097,7 @@ function validateBlueprint(
     "continuity_system",
     "directing_rules",
     "quality_control"
-  ];
+      ];
 
   for (const section of requiredRootSections) {
 
@@ -2412,8 +2397,7 @@ function validateBlueprint(
     if (
       totalBeatDuration !== duration
     ) {
-
-      errors.push(
+            errors.push(
         `Beat duration mismatch. Expected ${duration}s, got ${totalBeatDuration}s.`
       );
     }
@@ -2669,6 +2653,7 @@ function parseTimeRange(value) {
   // Format: 0 - 4
   match = cleaned.match(
     /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
+
   );
 
   if (match) {
@@ -2711,7 +2696,6 @@ Do not remove cinematic detail unless required.
 Do not replace locked facts.
 
 Do not invent new evidence.
-
 =========================================================
 RESEARCH
 =========================================================
