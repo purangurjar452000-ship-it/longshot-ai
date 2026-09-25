@@ -10,25 +10,25 @@ function getProviderName(value) {
 }
 
 function getSceneId(job) {
-  return job.scene_id || job.sceneId || "UNKNOWN_SCENE";
+  return job.scene_id || job.sceneId || "";
 }
 
 function getPrompt(job) {
   return String(
     job.prompt ||
-    job.visual_prompt ||
-    job.request?.prompt ||
-    job.request?.visual_prompt ||
-    ""
+      job.visual_prompt ||
+      job.request?.prompt ||
+      job.request?.visual_prompt ||
+      ""
   ).trim();
 }
 
 function getDuration(job) {
   const value = Number(
     job.duration_seconds ||
-    job.duration ||
-    job.request?.duration_seconds ||
-    5
+      job.duration ||
+      job.request?.duration_seconds ||
+      5
   );
 
   return Math.min(10, Math.max(5, Math.round(value)));
@@ -108,8 +108,8 @@ async function runRunwayProvider(job) {
   if (!response.ok) {
     throw new Error(
       data?.error ||
-      data?.message ||
-      `Runway request failed with status ${response.status}.`
+        data?.message ||
+        `Runway request failed with status ${response.status}.`
     );
   }
 
@@ -148,6 +148,57 @@ export async function generateVideoFromJob(
   throw new Error(
     `Unsupported video provider: ${provider}`
   );
+}
+
+export async function getRunwayTaskStatus(taskId) {
+  const apiKey = process.env.RUNWAY_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "RUNWAY_API_KEY is not configured."
+    );
+  }
+
+  if (!taskId) {
+    throw new Error("Runway task ID is required.");
+  }
+
+  const response = await fetch(
+    `https://api.dev.runwayml.com/v1/tasks/${taskId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "X-Runway-Version": "2024-11-06"
+      }
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error ||
+        data?.message ||
+        `Runway task check failed with status ${response.status}.`
+    );
+  }
+
+  let videoUrl = null;
+
+  if (Array.isArray(data.output)) {
+    videoUrl = data.output[0] || null;
+  } else if (typeof data.output === "string") {
+    videoUrl = data.output;
+  }
+
+  return {
+    provider: "runway",
+    task_id: taskId,
+    status: data.status || "UNKNOWN",
+    video_url: videoUrl,
+    raw: data
+  };
 }
 
 export function getAvailableVideoProviders() {
