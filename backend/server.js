@@ -7,7 +7,11 @@ import { researchTopic } from "./researchEngine.js";
 import { createDirectorBlueprint } from "./directorEngine.js";
 import { createScenePlan } from "./scenePlannerEngine.js";
 import { createVideoGenerationJobs } from "./videoGenerationEngine.js";
-import { generateVideoFromJob } from "./videoProviderAdapter.js";
+
+import {
+  generateVideoFromJob,
+  getRunwayTaskStatus
+} from "./videoProviderAdapter.js";
 
 const app = express();
 
@@ -205,11 +209,34 @@ app.post("/api/generate-video", async (req, res) => {
     );
 
     res.json({
-      status: "video_generation_completed",
+      status: "video_generation_submitted",
       result
     });
   } catch (error) {
     console.error("Video Generation Error:", error);
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+/* =========================================================
+RUNWAY TASK STATUS
+========================================================= */
+
+app.get("/api/runway-task/:taskId", async (req, res) => {
+  try {
+    const result = await getRunwayTaskStatus(
+      req.params.taskId
+    );
+
+    res.json({
+      status: "runway_task_status",
+      result
+    });
+  } catch (error) {
+    console.error("Runway Task Error:", error);
 
     res.status(500).json({
       error: error.message
