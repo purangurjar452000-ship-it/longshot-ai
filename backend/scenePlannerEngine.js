@@ -1,8 +1,6 @@
 function parseTimeRange(value) {
-  const match = String(value || "")
   const cleaned = String(value || "")
     .replace(/[–—−]/g, "-")
-    .match(/(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)/i);
     .trim();
 
   const clockMatch = cleaned.match(
@@ -11,8 +9,13 @@ function parseTimeRange(value) {
 
   if (clockMatch) {
     return {
-      start: Number(clockMatch[1]) * 60 + Number(clockMatch[2]),
-      end: Number(clockMatch[3]) * 60 + Number(clockMatch[4])
+      start:
+        Number(clockMatch[1]) * 60 +
+        Number(clockMatch[2]),
+
+      end:
+        Number(clockMatch[3]) * 60 +
+        Number(clockMatch[4])
     };
   }
 
@@ -20,7 +23,9 @@ function parseTimeRange(value) {
     /^(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)$/i
   );
 
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
 
   return {
     start: Number(match[1]),
