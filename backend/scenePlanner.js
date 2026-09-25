@@ -97,6 +97,7 @@ CONTINUITY RULES:
 - Keep lighting motivated by the established environment.
 - Preserve all injuries, props and action states.
 - Preserve the exact canonical character and location names.
+- If the Director Blueprint uses Dronagiri, never output Gandhamadana or any alias.
 - Do not introduce new characters without evidence.
 - Do not change the visual style between scenes.
 - Maintain realistic anatomy, gravity, weight and motion.
@@ -259,7 +260,9 @@ export function createScenePlan(
         "No costume or face changes.",
         "No timeline gaps or overlaps.",
         "No modern objects unless explicitly supported.",
-        "No impossible anatomy or physics."
+        "No impossible anatomy or physics.",
+        "Never replace Dronagiri with Gandhamadana or another alias.",
+        "Never invent healing or recovery unless present in the Director Blueprint."
       ]
     },
 
