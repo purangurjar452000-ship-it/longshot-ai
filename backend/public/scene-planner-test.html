@@ -50,10 +50,6 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background: #ffad42;
-    }
-
     button:disabled {
       opacity: 0.6;
       cursor: wait;
@@ -117,11 +113,14 @@
     <button id="generateButton">
       Generate Scene Plan
     </button>
-    <button id="videoJobsButton" disabled>
-  Generate Video Jobs
-</button>
 
-    <pre id="result">Scene plan output will appear here...</pre>
+    <button id="videoJobsButton" disabled>
+      Generate Video Jobs
+    </button>
+
+    <pre id="result">
+Scene plan output will appear here...
+    </pre>
   </div>
 
   <script>
@@ -134,20 +133,21 @@
     const aspectRatioInput =
       document.getElementById("aspectRatio");
 
-    const button =
+    const generateButton =
       document.getElementById("generateButton");
+
+    const videoJobsButton =
+      document.getElementById("videoJobsButton");
 
     const result =
       document.getElementById("result");
-    const videoJobsButton =
-  document.getElementById("videoJobsButton");
-    let latestScenePlan = null;
-    let latestDirectorBlueprint = null;
 
     const info =
       document.getElementById("info");
 
-    // Director page se saved data automatically load karo
+    let latestScenePlan = null;
+    let latestDirectorBlueprint = null;
+
     const savedBlueprint =
       sessionStorage.getItem(
         "longshot_director_blueprint"
@@ -180,146 +180,163 @@
       aspectRatioInput.value = savedAspectRatio;
     }
 
-    button.addEventListener("click", async () => {
-      const blueprintText =
-        blueprintInput.value.trim();
+    generateButton.addEventListener(
+      "click",
+      async () => {
+        const blueprintText =
+          blueprintInput.value.trim();
 
-      const duration =
-        Number(durationInput.value) || 30;
+        const duration =
+          Number(durationInput.value) || 30;
 
-      const aspectRatio =
-        aspectRatioInput.value;
+        const aspectRatio =
+          aspectRatioInput.value;
 
-      if (!blueprintText) {
-        result.textContent =
-          "Please paste or load the Director Blueprint JSON first.";
-        return;
-      }
-
-      let directorBlueprint;
-
-      try {
-        directorBlueprint =
-          JSON.parse(blueprintText);
-        latestDirectorBlueprint =
-  directorBlueprint;
-      } catch (error) {
-        result.textContent =
-          "Invalid JSON. Paste only the complete blueprint JSON.";
-        return;
-      }
-
-      button.disabled = true;
-      button.textContent = "Generating...";
-      result.textContent =
-        "Scene Planner is working...";
-
-      try {
-        const response =
-          await fetch("/api/scene-planner", {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              directorBlueprint,
-              duration,
-              aspectRatio
-            })
-          });
-
-        const data =
-          await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.error ||
-            "Scene Planner request failed."
-          );
+        if (!blueprintText) {
+          result.textContent =
+            "Please paste or load the Director Blueprint JSON first.";
+          return;
         }
 
+        try {
+          latestDirectorBlueprint =
+            JSON.parse(blueprintText);
+        } catch (error) {
+          result.textContent =
+            "Invalid JSON. Paste only the complete blueprint JSON.";
+          return;
+        }
+
+        generateButton.disabled = true;
+        generateButton.textContent =
+          "Generating...";
+
         result.textContent =
-          JSON.stringify(data, null, 2);
-        latestScenePlan = data.scenePlan;
+          "Scene Planner is working...";
 
-videoJobsButton.disabled = false;
-videoJobsButton.textContent =
-  "Generate Video Jobs";
+        try {
+          const response =
+            await fetch("/api/scene-planner", {
+              method: "POST",
 
-        info.textContent =
-          "✅ Scene Plan successfully generated.";
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
 
-      } catch (error) {
-        result.textContent =
-          "Error: " + error.message;
+              body: JSON.stringify({
+                directorBlueprint:
+                  latestDirectorBlueprint,
 
-        info.textContent =
-          "❌ Scene Planner failed.";
-      } finally {
-        button.disabled = false;
-        button.textContent =
-          "Generate Scene Plan";
+                duration,
+                aspectRatio
+              })
+            });
+
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error ||
+              "Scene Planner request failed."
+            );
+          }
+
+          latestScenePlan =
+            data.scenePlan;
+
+          result.textContent =
+            JSON.stringify(data, null, 2);
+
+          videoJobsButton.disabled = false;
+          videoJobsButton.textContent =
+            "Generate Video Jobs";
+
+          info.textContent =
+            "✅ Scene Plan successfully generated.";
+
+        } catch (error) {
+          result.textContent =
+            "Error: " + error.message;
+
+          info.textContent =
+            "❌ Scene Planner failed.";
+        } finally {
+          generateButton.disabled = false;
+          generateButton.textContent =
+            "Generate Scene Plan";
+        }
       }
-    });
+    );
+
     videoJobsButton.addEventListener(
-  "click",
-  async () => {
-    if (!latestScenePlan) {
-      result.textContent =
-        "Please generate the Scene Plan first.";
-      return;
-    }
+      "click",
+      async () => {
+        if (
+          !latestScenePlan ||
+          !latestDirectorBlueprint
+        ) {
+          result.textContent =
+            "Generate the Scene Plan first.";
+          return;
+        }
 
-    videoJobsButton.disabled = true;
-    videoJobsButton.textContent =
-      "Creating Video Jobs...";
+        videoJobsButton.disabled = true;
+        videoJobsButton.textContent =
+          "Creating Video Jobs...";
 
-    result.textContent =
-      "Video Generation jobs create ho rahe hain...";
+        result.textContent =
+          "Video Generation jobs create ho rahe hain...";
 
-    try {
-      const response =
-        await fetch("/api/video-jobs", {
-          method: "POST",
+        try {
+          const response =
+            await fetch("/api/video-jobs", {
+              method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
 
-          body: JSON.stringify({
-  scenePlan: latestScenePlan,
-  directorBlueprint: latestDirectorBlueprint,
-  provider: "provider-neutral"
-})
+              body: JSON.stringify({
+                scenePlan:
+                  latestScenePlan,
 
-      const data =
-        await response.json();
+                directorBlueprint:
+                  latestDirectorBlueprint,
 
-      if (!response.ok) {
-        throw new Error(
-          data.error ||
-          "Video Jobs request failed."
-        );
+                provider:
+                  "provider-neutral"
+              })
+            });
+
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error ||
+              "Video Jobs request failed."
+            );
+          }
+
+          result.textContent =
+            JSON.stringify(data, null, 2);
+
+          videoJobsButton.textContent =
+            "Video Jobs Created";
+
+        } catch (error) {
+          result.textContent =
+            "Error: " + error.message;
+
+          videoJobsButton.disabled = false;
+          videoJobsButton.textContent =
+            "Generate Video Jobs";
+        }
       }
-
-      result.textContent =
-        JSON.stringify(data, null, 2);
-
-      videoJobsButton.textContent =
-        "Video Jobs Created";
-
-    } catch (error) {
-      result.textContent =
-        "Error: " + error.message;
-
-      videoJobsButton.disabled = false;
-      videoJobsButton.textContent =
-        "Generate Video Jobs";
-    }
-  }
-);
+    );
   </script>
 </body>
 </html>
