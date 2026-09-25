@@ -910,47 +910,58 @@ const directorSchema = {
       properties: {
 
         character_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         face_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         body_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         costume_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         accessory_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         environment_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         lighting_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         temporal_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         geography_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         action_state_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         },
 
         physics_continuity: {
-          type: "string"
+          type: "array",
+          items: { type: "string" }
         }
 
       },
