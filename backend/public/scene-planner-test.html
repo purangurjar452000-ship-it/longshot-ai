@@ -54,6 +54,11 @@
       background: #ffad42;
     }
 
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
     pre {
       white-space: pre-wrap;
       word-break: break-word;
@@ -69,6 +74,11 @@
       margin-top: 14px;
       color: #ccc;
     }
+
+    .info {
+      color: #8ee28e;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
@@ -76,16 +86,28 @@
   <div class="container">
     <h1>🎬 LongShot AI Scene Planner</h1>
 
+    <div class="info" id="info">
+      Director Blueprint load ho raha hai...
+    </div>
+
     <label>Director Blueprint JSON</label>
+
     <textarea
       id="blueprint"
       placeholder="Paste the complete Director Blueprint JSON here"
     ></textarea>
 
     <label>Duration in seconds</label>
-    <input id="duration" type="number" value="30" min="1" />
+
+    <input
+      id="duration"
+      type="number"
+      value="30"
+      min="1"
+    />
 
     <label>Aspect Ratio</label>
+
     <select id="aspectRatio">
       <option value="9:16">9:16</option>
       <option value="16:9">16:9</option>
@@ -100,29 +122,78 @@
   </div>
 
   <script>
-    const button = document.getElementById("generateButton");
-    const result = document.getElementById("result");
+    const blueprintInput =
+      document.getElementById("blueprint");
+
+    const durationInput =
+      document.getElementById("duration");
+
+    const aspectRatioInput =
+      document.getElementById("aspectRatio");
+
+    const button =
+      document.getElementById("generateButton");
+
+    const result =
+      document.getElementById("result");
+
+    const info =
+      document.getElementById("info");
+
+    // Director page se saved data automatically load karo
+    const savedBlueprint =
+      sessionStorage.getItem(
+        "longshot_director_blueprint"
+      );
+
+    const savedDuration =
+      sessionStorage.getItem(
+        "longshot_duration"
+      );
+
+    const savedAspectRatio =
+      sessionStorage.getItem(
+        "longshot_aspect_ratio"
+      );
+
+    if (savedBlueprint) {
+      blueprintInput.value = savedBlueprint;
+      info.textContent =
+        "✅ Director Blueprint automatically loaded.";
+    } else {
+      info.textContent =
+        "ℹ️ Blueprint manually paste kar sakte ho.";
+    }
+
+    if (savedDuration) {
+      durationInput.value = savedDuration;
+    }
+
+    if (savedAspectRatio) {
+      aspectRatioInput.value = savedAspectRatio;
+    }
 
     button.addEventListener("click", async () => {
       const blueprintText =
-        document.getElementById("blueprint").value.trim();
+        blueprintInput.value.trim();
 
       const duration =
-        Number(document.getElementById("duration").value) || 30;
+        Number(durationInput.value) || 30;
 
       const aspectRatio =
-        document.getElementById("aspectRatio").value;
+        aspectRatioInput.value;
 
       if (!blueprintText) {
         result.textContent =
-          "Please paste the Director Blueprint JSON first.";
+          "Please paste or load the Director Blueprint JSON first.";
         return;
       }
 
       let directorBlueprint;
 
       try {
-        directorBlueprint = JSON.parse(blueprintText);
+        directorBlueprint =
+          JSON.parse(blueprintText);
       } catch (error) {
         result.textContent =
           "Invalid JSON. Paste only the complete blueprint JSON.";
@@ -131,38 +202,50 @@
 
       button.disabled = true;
       button.textContent = "Generating...";
-      result.textContent = "Scene Planner is working...";
+      result.textContent =
+        "Scene Planner is working...";
 
       try {
-        const response = await fetch("/api/scene-planner", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            directorBlueprint,
-            duration,
-            aspectRatio
-          })
-        });
+        const response =
+          await fetch("/api/scene-planner", {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              directorBlueprint,
+              duration,
+              aspectRatio
+            })
+          });
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (!response.ok) {
           throw new Error(
-            data.error || "Scene Planner request failed."
+            data.error ||
+            "Scene Planner request failed."
           );
         }
 
         result.textContent =
           JSON.stringify(data, null, 2);
 
+        info.textContent =
+          "✅ Scene Plan successfully generated.";
+
       } catch (error) {
         result.textContent =
           "Error: " + error.message;
+
+        info.textContent =
+          "❌ Scene Planner failed.";
       } finally {
         button.disabled = false;
-        button.textContent = "Generate Scene Plan";
+        button.textContent =
+          "Generate Scene Plan";
       }
     });
   </script>
