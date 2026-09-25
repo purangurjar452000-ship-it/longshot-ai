@@ -2734,12 +2734,13 @@ CORRECTION RULES
 16. Add field-level claims for every required character and location visual group.
 
 17. State clearly that Hanuman could not identify the individual herbs and lifted the entire locked mountain.
+18. Any location visual_claim marked VERIFIED must be changed to CREATIVE_RECONSTRUCTION unless the cited evidence directly proves that exact visual detail. FACT_001 does not prove tents, palms, props, architecture, weather or lighting.
 
-15. Keep character identity separate from visual appearance.
+19. Keep character identity separate from visual appearance.
 
-16. Correct each visual_claim classification against its own cited evidence.
+20. Correct each visual_claim classification against its own cited evidence.
 
-17. Never treat a verified location name as proof of its visual details.
+21. Never treat a verified location name as proof of its visual details.
 
 Return ONLY the corrected JSON blueprint.
 `;
