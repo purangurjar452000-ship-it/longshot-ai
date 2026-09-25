@@ -1,53 +1,111 @@
-function getDurationParts(duration) {
-  const total = Number(duration) || 20;
-  const sceneCount = Math.ceil(total / 5);
-  const parts = [];
+function parseTimeRange(value) {
+  const match = String(value || "")
+    .replace(/[–—−]/g, "-")
+    .match(/(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)/i);
 
-  for (let i = 0; i < sceneCount; i++) {
-    const start = i * 5;
-    const end = Math.min(start + 5, total);
+  if (!match) return null;
 
-    parts.push({
-      start_time: start,
-      end_time: end,
-      duration_seconds: end - start
-    });
+  return {
+    start: Number(match[1]),
+    end: Number(match[2])
+  };
+}
+
+function getCharacters(blueprint) {
+  return (blueprint.character_bible || [])
+    .map((item) => String(item.name || "").trim())
+    .filter(Boolean);
+}
+
+function getLocations(blueprint) {
+  return (blueprint.world_bible?.locations || [])
+    .map((item) => String(item.name || "").trim())
+    .filter(Boolean);
+}
+
+function resolveLocation(beatLocation, locations) {
+  const requested = String(beatLocation || "").trim();
+
+  const exact = locations.find(
+    (name) => name.toLowerCase() === requested.toLowerCase()
+  );
+
+  if (exact) return exact;
+
+  const dronagiri = locations.find((name) =>
+    name.toLowerCase().includes("dronagiri")
+  );
+
+  if (
+    dronagiri &&
+    /gandhamadana|mahodaya|sanjeevani mountain/i.test(requested)
+  ) {
+    return dronagiri;
   }
 
-  return parts;
+  return requested || locations[0] || "Unspecified location";
 }
 
-function getCharacterNames(blueprint) {
-  return (blueprint.character_bible || [])
-    .map((character) => character.name)
-    .filter(Boolean);
-}
-
-function getLocationNames(blueprint) {
-  return (blueprint.world_bible?.locations || [])
-    .map((location) => location.name)
-    .filter(Boolean);
-}
-
-function getBeatForTime(blueprint, startTime) {
-  const beats = blueprint.story_blueprint?.beats || [];
-
-  return beats.find((beat) => {
-    const range = String(beat.time_range || "")
-      .replace(/[–—]/g, "-")
-      .split("-")
-      .map(Number);
-
-    return (
-      range.length === 2 &&
-      startTime >= range[0] &&
-      startTime < range[1]
-    );
-  });
-}
-
-function blueprintExplicitlyIncludesHealing(blueprint) {
+function getRelevantCharacters(beat, characters) {
   const text = [
+    beat?.story_action,
+    beat?.character_action,
+    beat?.emotional_purpose
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  const matched = characters.filter((name) =>
+    text.includes(name.toLowerCase())
+  );
+
+  return matched.length > 0 ? matched : characters;
+}
+
+function buildVisualPrompt({ blueprint, beat, location, characters, aspectRatio }) {
+  const visual = blueprint.visual_language || {};
+  const characterText = characters.join(", ") || "established characters";
+
+  return [
+    `Production-ready cinematic shot from the Director Blueprint.`,
+    `Vertical ${aspectRatio} composition.`,
+    `Location: ${location}.`,
+    `Characters: ${characterText}.`,
+    `Story action: ${beat?.story_action || "Continue the selected beat exactly."}`,
+    `Character action: ${beat?.character_action || "Preserve the established action state."}`,
+    `Visual priority: ${beat?.visual_priority || "Maintain grounded cinematic realism."}`,
+    `Camera language: ${visual.capture_system || "cinematic digital camera"}; ${visual.lens_policy || "natural lens rendering"}.`,
+    `Lighting: ${visual.lighting || "motivated naturalistic lighting"}.`,
+    `Texture and motion: ${visual.texture_detail || "realistic textures"}; ${visual.motion_rendering || "natural motion blur"}.`,
+    `Use only the characters, location, action and facts present in this Director Blueprint.`,
+    `Do not add healing, recovery, dialogue, props or events absent from the selected beat.`
+  ].join(" ");
+}
+
+function buildNegativePrompt() {
+  return [
+    "canonical name changes",
+    "Dronagiri renamed as Gandhamadana",
+    "invented healing or recovery",
+    "invented characters or events",
+    "face morphing",
+    "costume changes",
+    "extra limbs",
+    "missing fingers or toes",
+    "plastic skin",
+    "cartoon rendering",
+    "modern objects",
+    "wrong location",
+    "timeline discontinuity",
+    "weightless physics"
+  ];
+}
+
+function validateScenePlan(plan, blueprint, expectedDuration, aspectRatio) {
+  const errors = [];
+  const scenes = plan.scenes;
+  const locations = getLocations(blueprint);
+  const blueprintText = [
+    blueprint.story_blueprint?.logline,
+    blueprint.story_blueprint?.opening_hook,
     blueprint.story_blueprint?.ending_beat,
     ...(blueprint.story_blueprint?.beats || []).flatMap((beat) => [
       beat.story_action,
@@ -56,68 +114,63 @@ function blueprintExplicitlyIncludesHealing(blueprint) {
     ])
   ].filter(Boolean).join(" ").toLowerCase();
 
-  return /heal|healing|recovered|recovery|revived|revival|cured|cure/.test(text);
-}
+  const planText = scenes.map((scene) => [
+    scene.location,
+    scene.story_action,
+    scene.character_action
+  ].filter(Boolean).join(" ")).join(" ").toLowerCase();
 
-function createScenePrompt({
-  blueprint,
-  beat,
-  sceneNumber,
-  aspectRatio,
-  previousScene,
-  nextScene
-}) {
-  const project = blueprint.project || {};
-  const location = beat?.location || "Cinematic environment";
-  const storyAction = beat?.story_action || "Continue the story naturally.";
-  const characterAction =
-    beat?.character_action || "Characters continue their established actions.";
+  if (!Array.isArray(scenes) || scenes.length === 0) {
+    errors.push("Scene plan contains no scenes.");
+    return errors;
+  }
 
-  return `
-Create Scene ${sceneNumber} as part of one continuous cinematic video.
+  const total = scenes.reduce(
+    (sum, scene) => sum + Number(scene.duration_seconds || 0),
+    0
+  );
 
-PROJECT:
-Title: ${project.title || "Untitled Project"}
-Aspect ratio: ${aspectRatio}
-Realism target: ${project.realism_target || "Grounded cinematic realism"}
+  if (total !== expectedDuration) {
+    errors.push(`Duration mismatch: expected ${expectedDuration}, got ${total}.`);
+  }
 
-LOCATION:
-${location}
+  let previousEnd = 0;
 
-STORY ACTION:
-${storyAction}
+  for (const scene of scenes) {
+    if (Number(scene.start_time) !== previousEnd) {
+      errors.push(`Timeline gap or overlap at ${scene.scene_id}.`);
+    }
 
-CHARACTER ACTION:
-${characterAction}
+    previousEnd = Number(scene.end_time);
 
-CONTINUITY RULES:
-- Keep every character's face, body, hair or fur, costume and accessories identical.
-- Keep the location geography consistent.
-- Keep the same time of day and weather progression.
-- Keep lighting motivated by the established environment.
-- Preserve all injuries, props and action states.
-- Preserve the exact canonical character and location names.
-- If the Director Blueprint uses Dronagiri, never output Gandhamadana or any alias.
-- Do not introduce new characters without evidence.
-- Do not change the visual style between scenes.
-- Maintain realistic anatomy, gravity, weight and motion.
-- Use ${aspectRatio} framing.
+    if (!locations.includes(scene.location)) {
+      errors.push(`Unknown or non-canonical location: ${scene.location}.`);
+    }
+  }
 
-DIRECTOR BLUEPRINT LOCK:
-- Use only events explicitly present in the Director Blueprint.
-- Do not invent healing, recovery, dialogue, characters or new actions.
-- Do not extend the story beyond the Director Blueprint ending beat.
-- Every action must be traceable to the selected Director beat.
-- Show Lakshmana healing only when the Director Blueprint explicitly says so.
+  if (previousEnd !== expectedDuration) {
+    errors.push("Timeline does not end at the requested duration.");
+  }
 
-PREVIOUS SCENE:
-${previousScene || "This is the opening scene."}
+  if (plan.project?.aspect_ratio !== aspectRatio) {
+    errors.push(`Aspect ratio mismatch: expected ${aspectRatio}.`);
+  }
 
-NEXT SCENE:
-${nextScene || "This is the final scene."}
+  if (
+    blueprintText.includes("dronagiri") &&
+    planText.includes("gandhamadana")
+  ) {
+    errors.push("Dronagiri was replaced by the Gandhamadana alias.");
+  }
 
-Generate a production-ready cinematic shot prompt.
-`;
+  if (
+    !/heal|healing|recovery|recovered|revived|cure/.test(blueprintText) &&
+    /heal|healing|recovery|recovered|revived|cure/.test(planText)
+  ) {
+    errors.push("Scene Planner invented healing or recovery.");
+  }
+
+  return errors;
 }
 
 export function createScenePlan(
@@ -125,153 +178,103 @@ export function createScenePlan(
   duration = 20,
   aspectRatio = "9:16"
 ) {
-  if (
-    !directorBlueprint ||
-    typeof directorBlueprint !== "object"
-  ) {
+  if (!directorBlueprint || typeof directorBlueprint !== "object") {
     throw new Error("Director Blueprint is required.");
   }
 
-  const totalDuration =
-    Number(duration) ||
-    directorBlueprint.project?.duration_seconds ||
-    20;
+  const expectedDuration = Number(duration) ||
+    Number(directorBlueprint.project?.duration_seconds) || 20;
 
-  const parts = getDurationParts(totalDuration);
+  const characters = getCharacters(directorBlueprint);
+  const locations = getLocations(directorBlueprint);
+  const beats = Array.isArray(directorBlueprint.story_blueprint?.beats)
+    ? directorBlueprint.story_blueprint.beats
+    : [];
 
-  const characterNames =
-    getCharacterNames(directorBlueprint);
+  if (beats.length === 0) {
+    throw new Error("Director Blueprint contains no story beats.");
+  }
 
-  const locationNames =
-    getLocationNames(directorBlueprint);
-
-  const healingIsExplicit =
-    blueprintExplicitlyIncludesHealing(directorBlueprint);
-
-  const scenes = parts.map((part, index) => {
-    const sceneNumber = index + 1;
-
-    const beat = getBeatForTime(
-      directorBlueprint,
-      part.start_time
-    );
-
-    const previousScene =
-      index > 0
-        ? `Scene ${sceneNumber - 1} ends immediately before this scene.`
-        : "";
-
-    const nextScene =
-      index < parts.length - 1
-        ? `Scene ${sceneNumber + 1} must continue from this action.`
-        : "End with a clear cinematic resolution.";
-
-    let characterAction = beat?.character_action || "";
-
-    if (
-      sceneNumber === parts.length &&
-      !healingIsExplicit
-    ) {
-      characterAction =
-        "Hanuman returns to the Lanka encampment carrying the entire locked mountain. The established characters look upward in astonishment and renewed hope. Do not show herb application or healing.";
-    }
-
-    const prompt = createScenePrompt({
-      blueprint: directorBlueprint,
-      beat: beat ? { ...beat, character_action: characterAction } : beat,
-      sceneNumber,
-      aspectRatio,
-      previousScene,
-      nextScene
-    });
+  const scenes = beats.map((beat, index) => {
+    const parsed = parseTimeRange(beat.time_range);
+    const start = parsed ? parsed.start : Math.min(index * 5, expectedDuration);
+    const end = parsed ? parsed.end : Math.min(start + 5, expectedDuration);
+    const location = resolveLocation(beat.location, locations);
+    const sceneCharacters = getRelevantCharacters(beat, characters);
 
     return {
-      scene_id: `SCENE_${String(sceneNumber).padStart(2, "0")}`,
-      scene_number: sceneNumber,
-      start_time: part.start_time,
-      end_time: part.end_time,
-      duration_seconds: part.duration_seconds,
-      location: beat?.location || locationNames[0] || "",
-      characters: characterNames,
-      story_action: beat?.story_action || "",
-      character_action: characterAction,
-      visual_prompt: prompt.trim(),
-      negative_prompt: [
-        "character face change",
-        "costume change",
-        "wrong location",
-        "wrong time of day",
-        "extra limbs",
-        "missing fingers",
-        "distorted anatomy",
-        "plastic skin",
-        "cartoon style",
-        "modern objects",
-        "random new characters",
-        "inconsistent lighting"
-      ],
+      scene_id: `SCENE_${String(index + 1).padStart(2, "0")}`,
+      scene_number: index + 1,
+      beat_number: beat.beat_number || index + 1,
+      start_time: start,
+      end_time: end,
+      duration_seconds: end - start,
+      location,
+      characters: sceneCharacters,
+      story_action: beat.story_action || "",
+      character_action: beat.character_action || "",
+      visual_prompt: buildVisualPrompt({
+        blueprint: directorBlueprint,
+        beat,
+        location,
+        characters: sceneCharacters,
+        aspectRatio
+      }),
+      negative_prompt: buildNegativePrompt(),
       continuity_requirements: [
-        "Same character identity across all scenes.",
-        "Same costume and accessories across all scenes.",
-        "Same environment geography across connected scenes.",
-        "Actions continue without reset or teleportation.",
-        "Lighting and weather change gradually and logically."
+        "Preserve exact character identity and appearance.",
+        "Preserve exact costume, accessories, injuries and action state.",
+        "Preserve exact canonical location name and geography.",
+        "Continue directly from the previous beat without restarting.",
+        "Do not add events absent from the Director Blueprint."
       ],
-      transition_to_next:
-        index < parts.length - 1
-          ? "Continue naturally into the next scene."
-          : healingIsExplicit
-            ? "End with the explicitly described resolution."
-            : "End on Hanuman's return with the entire mountain; do not add healing.",
-      evidence_ids: beat?.evidence_ids || []
+      transition_to_next: beat.transition_to_next || "Continue to the next beat.",
+      evidence_ids: Array.isArray(beat.evidence_ids) ? beat.evidence_ids : []
     };
   });
 
-  return {
+  const scenePlan = {
     project: {
-      title:
-        directorBlueprint.project?.title ||
-        "LongShot AI Scene Plan",
-      duration_seconds: totalDuration,
+      title: directorBlueprint.project?.title || "LongShot AI Scene Plan",
+      duration_seconds: expectedDuration,
       aspect_ratio: aspectRatio,
-      planning_strategy:
-        "Blueprint-driven chronological scene planning with strict continuity."
+      planning_strategy: "Deterministic Director Blueprint to Scene Plan V2."
     },
-
     continuity_locks: [
-      ...characterNames,
-      ...locationNames
+      ...characters,
+      ...locations,
+      "No invented events outside the Director Blueprint."
     ],
-
     scenes,
-
     quality_control: {
       checks: [
-        `Total duration must equal ${totalDuration} seconds.`,
-        `Aspect ratio must remain ${aspectRatio}.`,
-        "Character identity must remain unchanged.",
-        "Costume and accessories must remain unchanged.",
-        "Location geography must remain coherent.",
-        "Every scene must continue from the previous scene."
+        "Exact duration and contiguous timeline.",
+        "Exact aspect ratio.",
+        "Canonical character and location names.",
+        "No invented healing or recovery.",
+        "No invented characters, dialogue or events."
       ],
-
-      forbidden_errors: [
-        "No random character replacement.",
-        "No costume or face changes.",
-        "No timeline gaps or overlaps.",
-        "No modern objects unless explicitly supported.",
-        "No impossible anatomy or physics.",
-        "Never replace Dronagiri with Gandhamadana or another alias.",
-        "Never invent healing or recovery unless present in the Director Blueprint."
-      ]
+      forbidden_errors: buildNegativePrompt()
     },
-
     _longshot_scene_validation: {
       validator_version: "V2",
       passed: true,
-      validated_duration: totalDuration,
+      validated_duration: expectedDuration,
       validated_aspect_ratio: aspectRatio,
       scene_count: scenes.length
     }
   };
+
+  const errors = validateScenePlan(
+    scenePlan,
+    directorBlueprint,
+    expectedDuration,
+    aspectRatio
+  );
+
+  if (errors.length > 0) {
+    throw new Error(`Scene Plan failed validation: ${errors.join(" | ")}`);
+  }
+
+  return scenePlan;
 }
