@@ -142,6 +142,7 @@
     const videoJobsButton =
   document.getElementById("videoJobsButton");
     let latestScenePlan = null;
+    let latestDirectorBlueprint = null;
 
     const info =
       document.getElementById("info");
@@ -200,6 +201,8 @@
       try {
         directorBlueprint =
           JSON.parse(blueprintText);
+        latestDirectorBlueprint =
+  directorBlueprint;
       } catch (error) {
         result.textContent =
           "Invalid JSON. Paste only the complete blueprint JSON.";
@@ -286,10 +289,10 @@ videoJobsButton.textContent =
           },
 
           body: JSON.stringify({
-            scenePlan: latestScenePlan,
-            provider: "provider-neutral"
-          })
-        });
+  scenePlan: latestScenePlan,
+  directorBlueprint: latestDirectorBlueprint,
+  provider: "provider-neutral"
+})
 
       const data =
         await response.json();
