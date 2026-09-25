@@ -59,6 +59,7 @@ function validateJobs(jobs, scenePlan) {
     previousEnd = job.end_time;
 
     if (!job.prompt || !job.duration_seconds) {
+    if (!job.request?.prompt || !job.duration_seconds) {
       errors.push(`Incomplete video job: ${job.scene_id}.`);
     }
   }
