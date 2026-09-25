@@ -46,6 +46,19 @@ function getBeatForTime(blueprint, startTime) {
   });
 }
 
+function blueprintExplicitlyIncludesHealing(blueprint) {
+  const text = [
+    blueprint.story_blueprint?.ending_beat,
+    ...(blueprint.story_blueprint?.beats || []).flatMap((beat) => [
+      beat.story_action,
+      beat.character_action,
+      beat.transition_to_next
+    ])
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return /heal|healing|recovered|recovery|revived|revival|cured|cure/.test(text);
+}
+
 function createScenePrompt({
   blueprint,
   beat,
@@ -89,6 +102,13 @@ CONTINUITY RULES:
 - Maintain realistic anatomy, gravity, weight and motion.
 - Use ${aspectRatio} framing.
 
+DIRECTOR BLUEPRINT LOCK:
+- Use only events explicitly present in the Director Blueprint.
+- Do not invent healing, recovery, dialogue, characters or new actions.
+- Do not extend the story beyond the Director Blueprint ending beat.
+- Every action must be traceable to the selected Director beat.
+- Show Lakshmana healing only when the Director Blueprint explicitly says so.
+
 PREVIOUS SCENE:
 ${previousScene || "This is the opening scene."}
 
@@ -124,6 +144,9 @@ export function createScenePlan(
   const locationNames =
     getLocationNames(directorBlueprint);
 
+  const healingIsExplicit =
+    blueprintExplicitlyIncludesHealing(directorBlueprint);
+
   const scenes = parts.map((part, index) => {
     const sceneNumber = index + 1;
 
@@ -142,9 +165,19 @@ export function createScenePlan(
         ? `Scene ${sceneNumber + 1} must continue from this action.`
         : "End with a clear cinematic resolution.";
 
+    let characterAction = beat?.character_action || "";
+
+    if (
+      sceneNumber === parts.length &&
+      !healingIsExplicit
+    ) {
+      characterAction =
+        "Hanuman returns to the Lanka encampment carrying the entire locked mountain. The established characters look upward in astonishment and renewed hope. Do not show herb application or healing.";
+    }
+
     const prompt = createScenePrompt({
       blueprint: directorBlueprint,
-      beat,
+      beat: beat ? { ...beat, character_action: characterAction } : beat,
       sceneNumber,
       aspectRatio,
       previousScene,
@@ -160,7 +193,7 @@ export function createScenePlan(
       location: beat?.location || locationNames[0] || "",
       characters: characterNames,
       story_action: beat?.story_action || "",
-      character_action: beat?.character_action || "",
+      character_action: characterAction,
       visual_prompt: prompt.trim(),
       negative_prompt: [
         "character face change",
@@ -186,7 +219,9 @@ export function createScenePlan(
       transition_to_next:
         index < parts.length - 1
           ? "Continue naturally into the next scene."
-          : "End with a cinematic final beat.",
+          : healingIsExplicit
+            ? "End with the explicitly described resolution."
+            : "End on Hanuman's return with the entire mountain; do not add healing.",
       evidence_ids: beat?.evidence_ids || []
     };
   });
