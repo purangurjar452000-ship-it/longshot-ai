@@ -95,12 +95,7 @@
 
     <label>Duration in seconds</label>
 
-    <input
-      id="duration"
-      type="number"
-      value="30"
-      min="1"
-    />
+    <input id="duration" type="number" value="30" min="1" />
 
     <label>Aspect Ratio</label>
 
@@ -118,50 +113,38 @@
       Generate Video Jobs
     </button>
 
-    <pre id="result">
-Scene plan output will appear here...
-    </pre>
+    <button id="providerTestButton" disabled>
+      Run Provider Test
+    </button>
+
+    <pre id="result">Scene plan output will appear here...</pre>
   </div>
 
   <script>
-    const blueprintInput =
-      document.getElementById("blueprint");
-
-    const durationInput =
-      document.getElementById("duration");
-
-    const aspectRatioInput =
-      document.getElementById("aspectRatio");
-
-    const generateButton =
-      document.getElementById("generateButton");
-
-    const videoJobsButton =
-      document.getElementById("videoJobsButton");
-
-    const result =
-      document.getElementById("result");
-
-    const info =
-      document.getElementById("info");
+    const blueprintInput = document.getElementById("blueprint");
+    const durationInput = document.getElementById("duration");
+    const aspectRatioInput = document.getElementById("aspectRatio");
+    const generateButton = document.getElementById("generateButton");
+    const videoJobsButton = document.getElementById("videoJobsButton");
+    const providerTestButton = document.getElementById("providerTestButton");
+    const result = document.getElementById("result");
+    const info = document.getElementById("info");
 
     let latestScenePlan = null;
     let latestDirectorBlueprint = null;
+    let latestVideoJobs = null;
 
-    const savedBlueprint =
-      sessionStorage.getItem(
-        "longshot_director_blueprint"
-      );
+    const savedBlueprint = sessionStorage.getItem(
+      "longshot_director_blueprint"
+    );
 
-    const savedDuration =
-      sessionStorage.getItem(
-        "longshot_duration"
-      );
+    const savedDuration = sessionStorage.getItem(
+      "longshot_duration"
+    );
 
-    const savedAspectRatio =
-      sessionStorage.getItem(
-        "longshot_aspect_ratio"
-      );
+    const savedAspectRatio = sessionStorage.getItem(
+      "longshot_aspect_ratio"
+    );
 
     if (savedBlueprint) {
       blueprintInput.value = savedBlueprint;
@@ -180,163 +163,163 @@ Scene plan output will appear here...
       aspectRatioInput.value = savedAspectRatio;
     }
 
-    generateButton.addEventListener(
-      "click",
-      async () => {
-        const blueprintText =
-          blueprintInput.value.trim();
+    generateButton.addEventListener("click", async () => {
+      const blueprintText = blueprintInput.value.trim();
+      const duration = Number(durationInput.value) || 30;
+      const aspectRatio = aspectRatioInput.value;
 
-        const duration =
-          Number(durationInput.value) || 30;
-
-        const aspectRatio =
-          aspectRatioInput.value;
-
-        if (!blueprintText) {
-          result.textContent =
-            "Please paste or load the Director Blueprint JSON first.";
-          return;
-        }
-
-        try {
-          latestDirectorBlueprint =
-            JSON.parse(blueprintText);
-        } catch (error) {
-          result.textContent =
-            "Invalid JSON. Paste only the complete blueprint JSON.";
-          return;
-        }
-
-        generateButton.disabled = true;
-        generateButton.textContent =
-          "Generating...";
-
+      if (!blueprintText) {
         result.textContent =
-          "Scene Planner is working...";
-
-        try {
-          const response =
-            await fetch("/api/scene-planner", {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
-
-              body: JSON.stringify({
-                directorBlueprint:
-                  latestDirectorBlueprint,
-
-                duration,
-                aspectRatio
-              })
-            });
-
-          const data =
-            await response.json();
-
-          if (!response.ok) {
-            throw new Error(
-              data.error ||
-              "Scene Planner request failed."
-            );
-          }
-
-          latestScenePlan =
-            data.scenePlan;
-
-          result.textContent =
-            JSON.stringify(data, null, 2);
-
-          videoJobsButton.disabled = false;
-          videoJobsButton.textContent =
-            "Generate Video Jobs";
-
-          info.textContent =
-            "✅ Scene Plan successfully generated.";
-
-        } catch (error) {
-          result.textContent =
-            "Error: " + error.message;
-
-          info.textContent =
-            "❌ Scene Planner failed.";
-        } finally {
-          generateButton.disabled = false;
-          generateButton.textContent =
-            "Generate Scene Plan";
-        }
+          "Please paste or load the Director Blueprint JSON first.";
+        return;
       }
-    );
 
-    videoJobsButton.addEventListener(
-      "click",
-      async () => {
-        if (
-          !latestScenePlan ||
-          !latestDirectorBlueprint
-        ) {
-          result.textContent =
-            "Generate the Scene Plan first.";
-          return;
-        }
-
-        videoJobsButton.disabled = true;
-        videoJobsButton.textContent =
-          "Creating Video Jobs...";
-
+      try {
+        latestDirectorBlueprint = JSON.parse(blueprintText);
+      } catch {
         result.textContent =
-          "Video Generation jobs create ho rahe hain...";
-
-        try {
-          const response =
-            await fetch("/api/video-jobs", {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
-
-              body: JSON.stringify({
-                scenePlan:
-                  latestScenePlan,
-
-                directorBlueprint:
-                  latestDirectorBlueprint,
-
-                provider:
-                  "provider-neutral"
-              })
-            });
-
-          const data =
-            await response.json();
-
-          if (!response.ok) {
-            throw new Error(
-              data.error ||
-              "Video Jobs request failed."
-            );
-          }
-
-          result.textContent =
-            JSON.stringify(data, null, 2);
-
-          videoJobsButton.textContent =
-            "Video Jobs Created";
-
-        } catch (error) {
-          result.textContent =
-            "Error: " + error.message;
-
-          videoJobsButton.disabled = false;
-          videoJobsButton.textContent =
-            "Generate Video Jobs";
-        }
+          "Invalid JSON. Paste only the complete blueprint JSON.";
+        return;
       }
-    );
+
+      generateButton.disabled = true;
+      videoJobsButton.disabled = true;
+      providerTestButton.disabled = true;
+      result.textContent = "Scene Planner is working...";
+
+      try {
+        const response = await fetch("/api/scene-planner", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            directorBlueprint: latestDirectorBlueprint,
+            duration,
+            aspectRatio
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Scene Planner request failed."
+          );
+        }
+
+        latestScenePlan = data.scenePlan;
+
+        result.textContent = JSON.stringify(data, null, 2);
+
+        videoJobsButton.disabled = false;
+        info.textContent =
+          "✅ Scene Plan successfully generated.";
+      } catch (error) {
+        result.textContent = "Error: " + error.message;
+        info.textContent = "❌ Scene Planner failed.";
+      } finally {
+        generateButton.disabled = false;
+        generateButton.textContent = "Generate Scene Plan";
+      }
+    });
+
+    videoJobsButton.addEventListener("click", async () => {
+      if (!latestScenePlan || !latestDirectorBlueprint) {
+        result.textContent = "Generate the Scene Plan first.";
+        return;
+      }
+
+      videoJobsButton.disabled = true;
+      providerTestButton.disabled = true;
+      videoJobsButton.textContent = "Creating Video Jobs...";
+      result.textContent =
+        "Video Generation jobs create ho rahe hain...";
+
+      try {
+        const response = await fetch("/api/video-jobs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            scenePlan: latestScenePlan,
+            directorBlueprint: latestDirectorBlueprint,
+            provider: "provider-neutral"
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Video Jobs request failed."
+          );
+        }
+
+        latestVideoJobs = data.videoJobs;
+
+        result.textContent = JSON.stringify(data, null, 2);
+
+        videoJobsButton.textContent = "Video Jobs Created";
+        providerTestButton.disabled = false;
+
+        info.textContent =
+          "✅ Video Jobs created. Provider test ready.";
+      } catch (error) {
+        result.textContent = "Error: " + error.message;
+        videoJobsButton.disabled = false;
+        videoJobsButton.textContent = "Generate Video Jobs";
+      }
+    });
+
+    providerTestButton.addEventListener("click", async () => {
+      const jobs =
+        latestVideoJobs?.jobs ||
+        latestVideoJobs?.video_jobs ||
+        [];
+
+      if (!jobs.length) {
+        result.textContent =
+          "No video job found for provider testing.";
+        return;
+      }
+
+      providerTestButton.disabled = true;
+      providerTestButton.textContent = "Testing Provider...";
+      result.textContent =
+        "Mock Provider test chal raha hai...";
+
+      try {
+        const response = await fetch("/api/generate-video", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            job: jobs[0],
+            provider: "mock"
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Provider test failed."
+          );
+        }
+
+        result.textContent = JSON.stringify(data, null, 2);
+        info.textContent =
+          "✅ Provider Adapter successfully connected.";
+        providerTestButton.textContent = "Provider Test Passed";
+      } catch (error) {
+        result.textContent = "Error: " + error.message;
+        providerTestButton.disabled = false;
+        providerTestButton.textContent = "Run Provider Test";
+      }
+    });
   </script>
 </body>
 </html>
