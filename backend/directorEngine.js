@@ -1780,6 +1780,20 @@ FACT LOCK
 ${JSON.stringify(factLock, null, 2)}
 
 =========================================================
+AVAILABLE EVIDENCE IDS — CLOSED LIST
+=========================================================
+
+${JSON.stringify([
+  ...(factLock.locked_facts || []).map(item => item.evidence_id),
+  ...(factLock.creative_reconstructions || []).map(item => item.evidence_id),
+  ...(factLock.visual_notes || []).map(item => item.evidence_id)
+], null, 2)}
+
+Use ONLY IDs from this list.
+Never create CREATIVE_004 or any other new evidence ID.
+Remove unknown IDs instead of inventing replacements.
+
+=========================================================
 FINAL INSTRUCTION
 =========================================================
 
@@ -2675,6 +2689,20 @@ FACT LOCK
 =========================================================
 
 ${JSON.stringify(factLock, null, 2)}
+
+=========================================================
+AVAILABLE EVIDENCE IDS — CLOSED LIST
+=========================================================
+
+${JSON.stringify([
+  ...(factLock.locked_facts || []).map(item => item.evidence_id),
+  ...(factLock.creative_reconstructions || []).map(item => item.evidence_id),
+  ...(factLock.visual_notes || []).map(item => item.evidence_id)
+], null, 2)}
+
+Every evidence_ids entry must be copied from this list exactly.
+Remove any unknown ID such as CREATIVE_004.
+Do not invent replacements.
 
 =========================================================
 CURRENT BLUEPRINT
