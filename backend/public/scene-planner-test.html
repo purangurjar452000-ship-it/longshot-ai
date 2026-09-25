@@ -117,6 +117,9 @@
     <button id="generateButton">
       Generate Scene Plan
     </button>
+    <button id="videoJobsButton" disabled>
+  Generate Video Jobs
+</button>
 
     <pre id="result">Scene plan output will appear here...</pre>
   </div>
@@ -136,6 +139,9 @@
 
     const result =
       document.getElementById("result");
+    const videoJobsButton =
+  document.getElementById("videoJobsButton");
+    let latestScenePlan = null;
 
     const info =
       document.getElementById("info");
@@ -232,6 +238,11 @@
 
         result.textContent =
           JSON.stringify(data, null, 2);
+        latestScenePlan = data.scenePlan;
+
+videoJobsButton.disabled = false;
+videoJobsButton.textContent =
+  "Generate Video Jobs";
 
         info.textContent =
           "✅ Scene Plan successfully generated.";
@@ -248,6 +259,64 @@
           "Generate Scene Plan";
       }
     });
+    videoJobsButton.addEventListener(
+  "click",
+  async () => {
+    if (!latestScenePlan) {
+      result.textContent =
+        "Please generate the Scene Plan first.";
+      return;
+    }
+
+    videoJobsButton.disabled = true;
+    videoJobsButton.textContent =
+      "Creating Video Jobs...";
+
+    result.textContent =
+      "Video Generation jobs create ho rahe hain...";
+
+    try {
+      const response =
+        await fetch("/api/video-jobs", {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            scenePlan: latestScenePlan,
+            provider: "provider-neutral"
+          })
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "Video Jobs request failed."
+        );
+      }
+
+      result.textContent =
+        JSON.stringify(data, null, 2);
+
+      videoJobsButton.textContent =
+        "Video Jobs Created";
+
+    } catch (error) {
+      result.textContent =
+        "Error: " + error.message;
+
+      videoJobsButton.disabled = false;
+      videoJobsButton.textContent =
+        "Generate Video Jobs";
+    }
+  }
+);
   </script>
 </body>
 </html>
