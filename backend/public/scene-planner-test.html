@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LongShot AI Scene Planner</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #101114;
+      color: #f5f5f5;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      color: #ffb347;
+    }
+
+    textarea,
+    input,
+    select,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #1b1d22;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    textarea {
+      min-height: 360px;
+      resize: vertical;
+    }
+
+    button {
+      background: #ff8c00;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #ffad42;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #08090b;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      color: #ccc;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🎬 LongShot AI Scene Planner</h1>
+
+    <label>Director Blueprint JSON</label>
+    <textarea
+      id="blueprint"
+      placeholder="Paste the complete Director Blueprint JSON here"
+    ></textarea>
+
+    <label>Duration in seconds</label>
+    <input id="duration" type="number" value="30" min="1" />
+
+    <label>Aspect Ratio</label>
+    <select id="aspectRatio">
+      <option value="9:16">9:16</option>
+      <option value="16:9">16:9</option>
+      <option value="1:1">1:1</option>
+    </select>
+
+    <button id="generateButton">
+      Generate Scene Plan
+    </button>
+
+    <pre id="result">Scene plan output will appear here...</pre>
+  </div>
+
+  <script>
+    const button = document.getElementById("generateButton");
+    const result = document.getElementById("result");
+
+    button.addEventListener("click", async () => {
+      const blueprintText =
+        document.getElementById("blueprint").value.trim();
+
+      const duration =
+        Number(document.getElementById("duration").value) || 30;
+
+      const aspectRatio =
+        document.getElementById("aspectRatio").value;
+
+      if (!blueprintText) {
+        result.textContent =
+          "Please paste the Director Blueprint JSON first.";
+        return;
+      }
+
+      let directorBlueprint;
+
+      try {
+        directorBlueprint = JSON.parse(blueprintText);
+      } catch (error) {
+        result.textContent =
+          "Invalid JSON. Paste only the complete blueprint JSON.";
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Generating...";
+      result.textContent = "Scene Planner is working...";
+
+      try {
+        const response = await fetch("/api/scene-planner", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            directorBlueprint,
+            duration,
+            aspectRatio
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Scene Planner request failed."
+          );
+        }
+
+        result.textContent =
+          JSON.stringify(data, null, 2);
+
+      } catch (error) {
+        result.textContent =
+          "Error: " + error.message;
+      } finally {
+        button.disabled = false;
+        button.textContent = "Generate Scene Plan";
+      }
+    });
+  </script>
+</body>
+</html>
