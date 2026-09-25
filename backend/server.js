@@ -141,25 +141,32 @@ app.post("/api/scene-planner", async (req, res) => {
 app.post("/api/video-jobs", (req, res) => {
   try {
     const {
-      scenePlan,
-      provider,
-      model
-    } = req.body;
+  scenePlan,
+  directorBlueprint,
+  provider,
+  model
+} = req.body;
 
     if (!scenePlan) {
+      if (!directorBlueprint) {
+  return res.status(400).json({
+    error: "Director Blueprint is required"
+  });
+}
       return res.status(400).json({
         error: "Scene Plan is required"
       });
     }
 
-    const videoJobs =
-      createVideoGenerationJobs(
-        scenePlan,
-        {
-          provider: provider || "provider-neutral",
-          model: model || null
-        }
-      );
+   const videoJobs =
+  createVideoGenerationJobs(
+    scenePlan,
+    {
+      directorBlueprint,
+      provider: provider || "provider-neutral",
+      model: model || null
+    }
+  );
 
     res.json({
       status: "video_jobs_created",
