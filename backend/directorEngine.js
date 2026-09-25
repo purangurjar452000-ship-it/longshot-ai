@@ -598,7 +598,7 @@ const directorSchema = {
               },
 
               environmental_physics: {
-                                type: "array",
+                type: "array",
                 items: {
                   type: "string"
                 }
@@ -898,7 +898,8 @@ const directorSchema = {
         "beats"
       ]
     },
-        /* =====================================================
+
+    /* =====================================================
        CONTINUITY SYSTEM
     ===================================================== */
 
@@ -1109,16 +1110,10 @@ You MUST NOT:
 - introduce a contradictory fact
 - silently replace one traditional version with another
 
-If the research says:
-
-Dronagiri
-
-you MUST NOT output:
-
-Gandhamadana
-
-unless the research itself explicitly contains a
-documented contradiction that must be represented.
+If the research locks a canonical name, you MUST preserve
+that exact name. Do not replace it with an alias, translation,
+popular name or alternate spelling unless the research itself
+documents that relationship.
 
 When sources disagree, preserve the disagreement rather
 than silently selecting one version.
@@ -1180,8 +1175,8 @@ IDENTITY AND VISUAL EVIDENCE ARE SEPARATE
 - Set visual_design_status to VERIFIED only when every visual_claim is independently VERIFIED.
 - For every major character, create separate visual_claim entries covering at least: face, eyes, hair_or_fur, costume, anatomy, accessories and movement. Do not hide these details only inside prose fields.
 - For every location, create separate visual_claim entries covering at least: environment, terrain, vegetation, architecture, props, atmosphere, weather and lighting_conditions.
-- Preserve the exact canonical names supplied by the FACT LOCK. Do not substitute a traditional alias such as Gandhamadana for a locked name such as Dronagiri, or vice versa.
-- If the fact says Hanuman could not identify the individual herbs, state that explicitly and show him lifting the entire locked mountain; do not imply that he identified the mountain or herbs by appearance.
+- Preserve the exact canonical names supplied by the FACT LOCK. Do not substitute aliases or alternate names unless the research explicitly documents them.
+- Preserve every research-locked event and action exactly; do not invent a replacement action or object.
 
 =========================================================
 4. CHARACTER DIRECTING
@@ -1789,9 +1784,8 @@ ${JSON.stringify([
   ...(factLock.visual_notes || []).map(item => item.evidence_id)
 ], null, 2)}
 
-Use ONLY IDs from this list.
-Never create CREATIVE_004 or any other new evidence ID.
-Remove unknown IDs instead of inventing replacements.
+Use ONLY IDs from this list. Never create CREATIVE_004 or any other ID
+unless it appears in this list.
 
 =========================================================
 FINAL INSTRUCTION
@@ -1810,8 +1804,8 @@ IMPORTANT:
 - Add separate visual_claims for face, eyes, hair_or_fur, costume, anatomy, accessories and movement for every major character.
 - Add separate visual_claims for environment, terrain, vegetation, architecture, props, atmosphere, weather and lighting_conditions for every location.
 - Do not mark a visual_claim VERIFIED unless its cited evidence directly supports it.
-- Preserve every canonical person, object and location name exactly as written in the FACT LOCK, including Dronagiri when that is the locked name.
-- Explicitly state that Hanuman cannot identify the individual herbs and therefore lifts the entire locked mountain.
+- Preserve every canonical person, object and location name exactly as written in the FACT LOCK.
+- Reproduce each locked event and causal relationship from the supplied research; do not add topic-specific events that are absent from the research.
 - Keep character continuity strict.
 - Keep world continuity strict.
 - Keep time continuity strict.
@@ -2111,7 +2105,7 @@ function validateBlueprint(
     "continuity_system",
     "directing_rules",
     "quality_control"
-      ];
+  ];
 
   for (const section of requiredRootSections) {
 
@@ -2411,7 +2405,8 @@ function validateBlueprint(
     if (
       totalBeatDuration !== duration
     ) {
-            errors.push(
+
+      errors.push(
         `Beat duration mismatch. Expected ${duration}s, got ${totalBeatDuration}s.`
       );
     }
@@ -2612,34 +2607,65 @@ function extractImportantTerms(text) {
 ========================================================= */
 
 function parseTimeRange(value) {
+
   if (typeof value !== "string") {
     return null;
   }
 
   const cleaned = value
     .trim()
-    .toLowerCase()
-    .replace(/[–—−]/g, "-")
-    .replace(/\bto\b/g, "-")
-    .replace(/\b(seconds?|secs?|s)\b/g, "")
+    .replace(/[–—]/g, "-")
     .replace(/\s+/g, " ");
 
+  // Format: 00:00 - 00:04
   let match = cleaned.match(
-    /(\d+):(\d{1,2})\s*-\s*(\d+):(\d{1,2})/
+    /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/
   );
 
   if (match) {
+
+    const start =
+      Number(match[1]) * 60 +
+      Number(match[2]);
+
+    const end =
+      Number(match[3]) * 60 +
+      Number(match[4]);
+
     return {
-      start: Number(match[1]) * 60 + Number(match[2]),
-      end: Number(match[3]) * 60 + Number(match[4])
+      start,
+      end
     };
   }
 
+  // Format: 0:00 - 0:04
+  match = cleaned.match(
+    /(\d+):(\d+)\s*-\s*(\d+):(\d+)/
+  );
+
+  if (match) {
+
+    const start =
+      Number(match[1]) * 60 +
+      Number(match[2]);
+
+    const end =
+      Number(match[3]) * 60 +
+      Number(match[4]);
+
+    return {
+      start,
+      end
+    };
+  }
+
+  // Format: 0 - 4
   match = cleaned.match(
     /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
   );
 
   if (match) {
+
     return {
       start: Number(match[1]),
       end: Number(match[2])
@@ -2678,6 +2704,7 @@ Do not remove cinematic detail unless required.
 Do not replace locked facts.
 
 Do not invent new evidence.
+
 =========================================================
 RESEARCH
 =========================================================
@@ -2701,8 +2728,7 @@ ${JSON.stringify([
 ], null, 2)}
 
 Every evidence_ids entry must be copied from this list exactly.
-Remove any unknown ID such as CREATIVE_004.
-Do not invent replacements.
+Remove any unknown ID such as CREATIVE_004. Do not invent replacements.
 
 =========================================================
 CURRENT BLUEPRINT
@@ -2757,18 +2783,17 @@ CORRECTION RULES
 
 14. Do not claim validation passed.
 
-15. Preserve exact locked names; never replace Dronagiri with Gandhamadana or another alias when Dronagiri is the locked fact.
+15. Preserve exact locked names; never replace a research-locked name with an undocumented alias.
 
 16. Add field-level claims for every required character and location visual group.
 
-17. State clearly that Hanuman could not identify the individual herbs and lifted the entire locked mountain.
-18. Any location visual_claim marked VERIFIED must be changed to CREATIVE_RECONSTRUCTION unless the cited evidence directly proves that exact visual detail. FACT_001 does not prove tents, palms, props, architecture, weather or lighting.
+17. State clearly the research-locked causal action and outcome without inventing topic-specific details.
 
-19. Keep character identity separate from visual appearance.
+15. Keep character identity separate from visual appearance.
 
-20. Correct each visual_claim classification against its own cited evidence.
+16. Correct each visual_claim classification against its own cited evidence.
 
-21. Never treat a verified location name as proof of its visual details.
+17. Never treat a verified location name as proof of its visual details.
 
 Return ONLY the corrected JSON blueprint.
 `;
