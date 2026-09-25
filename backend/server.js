@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { researchTopic } from "./researchEngine.js";
 import { createDirectorBlueprint } from "./directorEngine.js";
 import { createScenePlan } from "./scenePlannerEngine.js";
+import { createVideoGenerationJobs } from "./videoGenerationEngine.js";
 
 const app = express();
 
@@ -131,6 +132,45 @@ app.post("/api/scene-planner", async (req, res) => {
 
   } catch (error) {
     console.error("Scene Planner Error:", error);
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+app.post("/api/video-jobs", (req, res) => {
+  try {
+    const {
+      scenePlan,
+      provider,
+      model
+    } = req.body;
+
+    if (!scenePlan) {
+      return res.status(400).json({
+        error: "Scene Plan is required"
+      });
+    }
+
+    const videoJobs =
+      createVideoGenerationJobs(
+        scenePlan,
+        {
+          provider: provider || "provider-neutral",
+          model: model || null
+        }
+      );
+
+    res.json({
+      status: "video_jobs_created",
+      videoJobs
+    });
+
+  } catch (error) {
+    console.error(
+      "Video Job Error:",
+      error
+    );
 
     res.status(500).json({
       error: error.message
