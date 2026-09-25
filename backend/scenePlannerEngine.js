@@ -1,246 +1,280 @@
-import { GoogleGenAI } from "@google/genai";
+function parseTimeRange(value) {
+  const match = String(value || "")
+    .replace(/[–—−]/g, "-")
+    .match(/(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)/i);
 
-const API_KEY = process.env.GEMINI_API_KEY;
+  if (!match) return null;
 
-if (!API_KEY) {
-  throw new Error("GEMINI_API_KEY is not configured");
+  return {
+    start: Number(match[1]),
+    end: Number(match[2])
+  };
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+function getCharacters(blueprint) {
+  return (blueprint.character_bible || [])
+    .map((item) => String(item.name || "").trim())
+    .filter(Boolean);
+}
 
-/* =========================================================
-   LONGSHOT AI — SCENE PLANNER ENGINE V1
-   Director Blueprint → Shot Plan → Validator → Correction
-========================================================= */
+function getLocations(blueprint) {
+  return (blueprint.world_bible?.locations || [])
+    .map((item) => String(item.name || "").trim())
+    .filter(Boolean);
+}
 
-const scenePlanSchema = {
-  type: "object",
-  properties: {
-    project: {
-      type: "object",
-      properties: {
-        title: { type: "string" },
-        duration_seconds: { type: "number" },
-        aspect_ratio: { type: "string" },
-        planning_strategy: { type: "string" }
-      },
-      required: ["title", "duration_seconds", "aspect_ratio", "planning_strategy"]
-    },
-    continuity_locks: {
-      type: "array",
-      items: { type: "string" }
-    },
-    shots: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          shot_id: { type: "string" },
-          beat_number: { type: "number" },
-          start_time: { type: "number" },
-          end_time: { type: "number" },
-          duration_seconds: { type: "number" },
-          location: { type: "string" },
-          characters: { type: "array", items: { type: "string" } },
-          story_purpose: { type: "string" },
-          character_action: { type: "string" },
-          blocking: { type: "string" },
-          camera: {
-            type: "object",
-            properties: {
-              shot_size: { type: "string" },
-              angle: { type: "string" },
-              height: { type: "string" },
-              lens: { type: "string" },
-              movement: { type: "string" },
-              focus: { type: "string" }
-            },
-            required: ["shot_size", "angle", "height", "lens", "movement", "focus"]
-          },
-          lighting: { type: "string" },
-          environment_action: { type: "string" },
-          continuity_requirements: { type: "array", items: { type: "string" } },
-          visual_prompt: { type: "string" },
-          negative_prompt: { type: "string" },
-          audio: {
-            type: "object",
-            properties: {
-              dialogue_or_voiceover: { type: "string" },
-              ambience: { type: "string" },
-              sound_effects: { type: "string" },
-              music_direction: { type: "string" }
-            },
-            required: ["dialogue_or_voiceover", "ambience", "sound_effects", "music_direction"]
-          },
-          transition_to_next: { type: "string" },
-          evidence_ids: { type: "array", items: { type: "string" } }
-        },
-        required: [
-          "shot_id", "beat_number", "start_time", "end_time", "duration_seconds",
-          "location", "characters", "story_purpose", "character_action", "blocking",
-          "camera", "lighting", "environment_action", "continuity_requirements",
-          "visual_prompt", "negative_prompt", "audio", "transition_to_next", "evidence_ids"
-        ]
-      }
-    },
-    quality_control: {
-      type: "object",
-      properties: {
-        checks: { type: "array", items: { type: "string" } },
-        forbidden_errors: { type: "array", items: { type: "string" } }
-      },
-      required: ["checks", "forbidden_errors"]
-    }
-  },
-  required: ["project", "continuity_locks", "shots", "quality_control"]
-};
+function resolveLocation(beatLocation, locations) {
+  const requested = String(beatLocation || "").trim();
 
-function collectEvidenceIds(value) {
-  const ids = new Set();
-  function walk(item) {
-    if (!item) return;
-    if (Array.isArray(item)) return item.forEach(walk);
-    if (typeof item !== "object") return;
-    for (const [key, child] of Object.entries(item)) {
-      if (key === "evidence_ids" && Array.isArray(child)) {
-        child.filter(id => typeof id === "string").forEach(id => ids.add(id));
-      }
-      walk(child);
-    }
+  const exact = locations.find(
+    (name) => name.toLowerCase() === requested.toLowerCase()
+  );
+
+  if (exact) return exact;
+
+  const dronagiri = locations.find((name) =>
+    name.toLowerCase().includes("dronagiri")
+  );
+
+  if (
+    dronagiri &&
+    /gandhamadana|mahodaya|sanjeevani mountain/i.test(requested)
+  ) {
+    return dronagiri;
   }
-  walk(value);
-  return [...ids];
+
+  return requested || locations[0] || "Unspecified location";
 }
 
-function validEvidenceIds(directorBlueprint) {
-  const policy = directorBlueprint?.evidence_policy || {};
-  return new Set([
-    ...(policy.locked_facts || []).map(item => item.evidence_id),
-    ...(directorBlueprint?.evidence_policy?.creative_reconstructions || [])
-      .map(item => typeof item === "string" ? item.split(":")[0] : item.evidence_id),
-    ...(directorBlueprint?.evidence_policy?.visual_research_notes || [])
-      .map(item => typeof item === "string" ? item.split(":")[0] : item.evidence_id)
-  ].filter(Boolean));
+function getRelevantCharacters(beat, characters) {
+  const text = [
+    beat?.story_action,
+    beat?.character_action,
+    beat?.emotional_purpose
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  const matched = characters.filter((name) =>
+    text.includes(name.toLowerCase())
+  );
+
+  return matched.length > 0 ? matched : characters;
 }
 
-function validateScenePlan(plan, directorBlueprint, duration, aspectRatio) {
+function buildVisualPrompt({ blueprint, beat, location, characters, aspectRatio }) {
+  const visual = blueprint.visual_language || {};
+  const characterText = characters.join(", ") || "established characters";
+
+  return [
+    `Production-ready cinematic shot from the Director Blueprint.`,
+    `Vertical ${aspectRatio} composition.`,
+    `Location: ${location}.`,
+    `Characters: ${characterText}.`,
+    `Story action: ${beat?.story_action || "Continue the selected beat exactly."}`,
+    `Character action: ${beat?.character_action || "Preserve the established action state."}`,
+    `Visual priority: ${beat?.visual_priority || "Maintain grounded cinematic realism."}`,
+    `Camera language: ${visual.capture_system || "cinematic digital camera"}; ${visual.lens_policy || "natural lens rendering"}.`,
+    `Lighting: ${visual.lighting || "motivated naturalistic lighting"}.`,
+    `Texture and motion: ${visual.texture_detail || "realistic textures"}; ${visual.motion_rendering || "natural motion blur"}.`,
+    `Use only the characters, location, action and facts present in this Director Blueprint.`,
+    `Do not add healing, recovery, dialogue, props or events absent from the selected beat.`
+  ].join(" ");
+}
+
+function buildNegativePrompt() {
+  return [
+    "canonical name changes",
+    "Dronagiri renamed as Gandhamadana",
+    "invented healing or recovery",
+    "invented characters or events",
+    "face morphing",
+    "costume changes",
+    "extra limbs",
+    "missing fingers or toes",
+    "plastic skin",
+    "cartoon rendering",
+    "modern objects",
+    "wrong location",
+    "timeline discontinuity",
+    "weightless physics"
+  ];
+}
+
+function validateScenePlan(plan, blueprint, expectedDuration, aspectRatio) {
   const errors = [];
-  if (!plan || typeof plan !== "object") return { passed: false, errors: ["Scene plan is missing or invalid."] };
-  if (plan.project?.duration_seconds !== duration) errors.push(`Duration mismatch. Expected ${duration}.`);
-  if (plan.project?.aspect_ratio !== aspectRatio) errors.push(`Aspect ratio mismatch. Expected ${aspectRatio}.`);
+  const scenes = plan.scenes;
+  const locations = getLocations(blueprint);
+  const blueprintText = [
+    blueprint.story_blueprint?.logline,
+    blueprint.story_blueprint?.opening_hook,
+    blueprint.story_blueprint?.ending_beat,
+    ...(blueprint.story_blueprint?.beats || []).flatMap((beat) => [
+      beat.story_action,
+      beat.character_action,
+      beat.transition_to_next
+    ])
+  ].filter(Boolean).join(" ").toLowerCase();
 
-  const shots = Array.isArray(plan.shots) ? plan.shots : [];
-  if (!shots.length) errors.push("Scene plan contains no shots.");
+  const planText = scenes.map((scene) => [
+    scene.location,
+    scene.story_action,
+    scene.character_action
+  ].filter(Boolean).join(" ")).join(" ").toLowerCase();
+
+  if (!Array.isArray(scenes) || scenes.length === 0) {
+    errors.push("Scene plan contains no scenes.");
+    return errors;
+  }
+
+  const total = scenes.reduce(
+    (sum, scene) => sum + Number(scene.duration_seconds || 0),
+    0
+  );
+
+  if (total !== expectedDuration) {
+    errors.push(`Duration mismatch: expected ${expectedDuration}, got ${total}.`);
+  }
 
   let previousEnd = 0;
-  let total = 0;
-  for (const shot of shots) {
-    const start = Number(shot.start_time);
-    const end = Number(shot.end_time);
-    const shotDuration = Number(shot.duration_seconds);
-    if (![start, end, shotDuration].every(Number.isFinite)) {
-      errors.push(`Invalid timing in ${shot.shot_id || "unknown shot"}.`);
-      continue;
+
+  for (const scene of scenes) {
+    if (Number(scene.start_time) !== previousEnd) {
+      errors.push(`Timeline gap or overlap at ${scene.scene_id}.`);
     }
-    if (Math.abs(start - previousEnd) > 0.01) errors.push(`Shot gap/overlap at ${shot.shot_id}.`);
-    if (end <= start || Math.abs((end - start) - shotDuration) > 0.01) errors.push(`Invalid duration in ${shot.shot_id}.`);
-    if (!shot.visual_prompt || !shot.negative_prompt) errors.push(`Missing visual prompts in ${shot.shot_id}.`);
-    if (!shot.camera?.movement || !shot.camera?.lens) errors.push(`Incomplete camera plan in ${shot.shot_id}.`);
-    if (!shot.audio?.ambience || !shot.audio?.sound_effects) errors.push(`Incomplete audio plan in ${shot.shot_id}.`);
-    previousEnd = end;
-    total += shotDuration;
+
+    previousEnd = Number(scene.end_time);
+
+    if (!locations.includes(scene.location)) {
+      errors.push(`Unknown or non-canonical location: ${scene.location}.`);
+    }
   }
-  if (Math.abs(total - duration) > 0.01) errors.push(`Shot durations total ${total}, expected ${duration}.`);
-  if (Math.abs(previousEnd - duration) > 0.01) errors.push(`Scene plan does not end at ${duration} seconds.`);
 
-  const validIds = validEvidenceIds(directorBlueprint);
-  for (const id of collectEvidenceIds(plan)) {
-    if (validIds.size && !validIds.has(id)) errors.push(`Unknown evidence ID used: ${id}.`);
+  if (previousEnd !== expectedDuration) {
+    errors.push("Timeline does not end at the requested duration.");
   }
-  return { passed: errors.length === 0, errors };
+
+  if (plan.project?.aspect_ratio !== aspectRatio) {
+    errors.push(`Aspect ratio mismatch: expected ${aspectRatio}.`);
+  }
+
+  if (
+    blueprintText.includes("dronagiri") &&
+    planText.includes("gandhamadana")
+  ) {
+    errors.push("Dronagiri was replaced by the Gandhamadana alias.");
+  }
+
+  if (
+    !/heal|healing|recovery|recovered|revived|cure/.test(blueprintText) &&
+    /heal|healing|recovery|recovered|revived|cure/.test(planText)
+  ) {
+    errors.push("Scene Planner invented healing or recovery.");
+  }
+
+  return errors;
 }
 
-function plannerInstructions(duration, aspectRatio) {
-  return `
-You are the EXPERT SCENE PLANNER for LongShot AI.
-
-Convert the supplied Director Blueprint into a production-ready shot plan.
-The requested duration is exactly ${duration} seconds and the aspect ratio is ${aspectRatio}.
-
-Rules:
-- Preserve every locked character, object, event and location name exactly.
-- Never replace Dronagiri with Gandhamadana when Dronagiri is locked.
-- Preserve the fact that Hanuman cannot identify the individual herbs and lifts the entire mountain.
-- Use only evidence IDs supplied by the Director Blueprint.
-- Every shot must have exact continuous timing from 0 to ${duration} seconds.
-- Use the same character appearance, costume, injury, location geometry, lighting and weather across shots.
-- Camera movement must have narrative purpose and physically plausible blocking.
-- Separate capture system from visual emulation.
-- Include image/video prompt, negative prompt, audio plan and transition for every shot.
-- Do not mark creative visual details as verified facts.
-- Do not add dialogue unless the blueprint supports it; use silence or ambience when appropriate.
-
-Create enough shots to cover the story at this duration. Do not simply stretch a shorter version.
-Return ONLY valid JSON matching the supplied schema.
-`;
-}
-
-async function generatePlan(input, schema) {
-  const response = await ai.interactions.create({
-    model: "gemini-3.5-flash-lite",
-    input,
-    response_format: { type: "text", mime_type: "application/json", schema }
-  });
-  if (!response.output_text) throw new Error("Scene Planner returned empty output.");
-  try { return JSON.parse(response.output_text); }
-  catch { throw new Error("Scene Planner returned invalid JSON."); }
-}
-
-async function correctPlan(plan, validation, directorBlueprint, duration, aspectRatio) {
-  const input = `${plannerInstructions(duration, aspectRatio)}
-
-CORRECTION MODE: Correct ONLY these validation errors:
-${JSON.stringify(validation.errors, null, 2)}
-
-CURRENT SCENE PLAN:
-${JSON.stringify(plan, null, 2)}
-
-DIRECTOR BLUEPRINT:
-${JSON.stringify(directorBlueprint, null, 2)}
-
-Return the corrected JSON only.`;
-  return generatePlan(input, scenePlanSchema);
-}
-
-export async function createScenePlan(directorBlueprint, duration = 20, aspectRatio = "9:16") {
+export function createScenePlan(
+  directorBlueprint,
+  duration = 20,
+  aspectRatio = "9:16"
+) {
   if (!directorBlueprint || typeof directorBlueprint !== "object") {
     throw new Error("Director Blueprint is required.");
   }
 
-  const input = `${plannerInstructions(duration, aspectRatio)}
+  const expectedDuration = Number(duration) ||
+    Number(directorBlueprint.project?.duration_seconds) || 20;
 
-DIRECTOR BLUEPRINT:
-${JSON.stringify(directorBlueprint, null, 2)}`;
+  const characters = getCharacters(directorBlueprint);
+  const locations = getLocations(directorBlueprint);
+  const beats = Array.isArray(directorBlueprint.story_blueprint?.beats)
+    ? directorBlueprint.story_blueprint.beats
+    : [];
 
-  let plan = await generatePlan(input, scenePlanSchema);
-  let validation = validateScenePlan(plan, directorBlueprint, duration, aspectRatio);
-
-  if (!validation.passed) {
-    plan = await correctPlan(plan, validation, directorBlueprint, duration, aspectRatio);
-    validation = validateScenePlan(plan, directorBlueprint, duration, aspectRatio);
+  if (beats.length === 0) {
+    throw new Error("Director Blueprint contains no story beats.");
   }
 
-  if (!validation.passed) {
-    throw new Error(`Scene Plan failed validation after auto-correction: ${validation.errors.join(" | ")}`);
-  }
+  const scenes = beats.map((beat, index) => {
+    const parsed = parseTimeRange(beat.time_range);
+    const start = parsed ? parsed.start : Math.min(index * 5, expectedDuration);
+    const end = parsed ? parsed.end : Math.min(start + 5, expectedDuration);
+    const location = resolveLocation(beat.location, locations);
+    const sceneCharacters = getRelevantCharacters(beat, characters);
 
-  plan._longshot_scene_validation = {
-    validator_version: "V1",
-    passed: true,
-    validated_duration: duration,
-    validated_aspect_ratio: aspectRatio,
-    shot_count: plan.shots.length
+    return {
+      scene_id: `SCENE_${String(index + 1).padStart(2, "0")}`,
+      scene_number: index + 1,
+      beat_number: beat.beat_number || index + 1,
+      start_time: start,
+      end_time: end,
+      duration_seconds: end - start,
+      location,
+      characters: sceneCharacters,
+      story_action: beat.story_action || "",
+      character_action: beat.character_action || "",
+      visual_prompt: buildVisualPrompt({
+        blueprint: directorBlueprint,
+        beat,
+        location,
+        characters: sceneCharacters,
+        aspectRatio
+      }),
+      negative_prompt: buildNegativePrompt(),
+      continuity_requirements: [
+        "Preserve exact character identity and appearance.",
+        "Preserve exact costume, accessories, injuries and action state.",
+        "Preserve exact canonical location name and geography.",
+        "Continue directly from the previous beat without restarting.",
+        "Do not add events absent from the Director Blueprint."
+      ],
+      transition_to_next: beat.transition_to_next || "Continue to the next beat.",
+      evidence_ids: Array.isArray(beat.evidence_ids) ? beat.evidence_ids : []
+    };
+  });
+
+  const scenePlan = {
+    project: {
+      title: directorBlueprint.project?.title || "LongShot AI Scene Plan",
+      duration_seconds: expectedDuration,
+      aspect_ratio: aspectRatio,
+      planning_strategy: "Deterministic Director Blueprint to Scene Plan V2."
+    },
+    continuity_locks: [
+      ...characters,
+      ...locations,
+      "No invented events outside the Director Blueprint."
+    ],
+    scenes,
+    quality_control: {
+      checks: [
+        "Exact duration and contiguous timeline.",
+        "Exact aspect ratio.",
+        "Canonical character and location names.",
+        "No invented healing or recovery.",
+        "No invented characters, dialogue or events."
+      ],
+      forbidden_errors: buildNegativePrompt()
+    },
+    _longshot_scene_validation: {
+      validator_version: "V2",
+      passed: true,
+      validated_duration: expectedDuration,
+      validated_aspect_ratio: aspectRatio,
+      scene_count: scenes.length
+    }
   };
-  return plan;
-}
 
+  const errors = validateScenePlan(
+    scenePlan,
+    directorBlueprint,
+    expectedDuration,
+    aspectRatio
+  );
+
+  if (errors.length > 0) {
+    throw new Error(`Scene Plan failed validation: ${errors.join(" | ")}`);
+  }
+
+  return scenePlan;
+}
