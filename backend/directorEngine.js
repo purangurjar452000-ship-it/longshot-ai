@@ -8,6 +8,8 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({
   apiKey: API_KEY
+});
+
 
 /* =========================================================
    LONGSHOT AI — DIRECTOR ENGINE V4.2
