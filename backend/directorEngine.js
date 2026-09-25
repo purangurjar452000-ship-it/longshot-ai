@@ -12,7 +12,7 @@ const ai = new GoogleGenAI({
 
 
 /* =========================================================
-   LONGSHOT AI — DIRECTOR ENGINE V4
+   LONGSHOT AI — DIRECTOR ENGINE V4.1
    Research → Fact Lock → Director → Validator → Correction
 ========================================================= */
 
@@ -136,630 +136,12 @@ function buildFactLock(research) {
         })
       )
   };
-}/* =========================================================
-   3. DIRECTOR SCHEMA
+}
+
+/* =========================================================
+   3. DIRECTOR SCHEMA — V4.1
 ========================================================= */
 
-const directorSchema = {
-
-  type: "object",
-
-  properties: {
-
-    project: {
-      type: "object",
-      properties: {
-        title: { type: "string" },
-        concept: { type: "string" },
-        domain: { type: "string" },
-        duration_seconds: { type: "number" },
-        aspect_ratio: { type: "string" },
-        creative_intent: { type: "string" },
-        realism_target: { type: "string" }
-      },
-      required: [
-        "title",
-        "concept",
-        "domain",
-        "duration_seconds",
-        "aspect_ratio",
-        "creative_intent",
-        "realism_target"
-      ]
-    },
-
-    evidence_policy: {
-      type: "object",
-      properties: {
-
-        locked_facts: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              evidence_id: { type: "string" },
-              claim: { type: "string" },
-              status: { type: "string" }
-            },
-            required: [
-              "evidence_id",
-              "claim",
-              "status"
-            ]
-          }
-        },
-
-        inferred_details: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        creative_reconstructions: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        unknown_details: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        contradictions_detected: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        fact_lock_rules: {
-          type: "array",
-          items: { type: "string" }
-        }
-      },
-
-      required: [
-        "locked_facts",
-        "inferred_details",
-        "creative_reconstructions",
-        "unknown_details",
-        "contradictions_detected",
-        "fact_lock_rules"
-      ]
-    },
-
-    character_bible: {
-      type: "array",
-
-      items: {
-        type: "object",
-
-        properties: {
-
-          name: { type: "string" },
-
-          identity_status: {
-            type: "string"
-          },
-
-          evidence_ids: {
-            type: "array",
-            items: { type: "string" }
-          },
-
-          physical_identity: {
-            type: "string"
-          },
-
-          body_proportions: {
-            type: "string"
-          },
-
-          facial_structure: {
-            type: "string"
-          },
-
-          face: {
-            type: "string"
-          },
-
-          eyes: {
-            type: "string"
-          },
-
-          hair_or_fur: {
-            type: "string"
-          },
-
-          skin_or_body_texture: {
-            type: "string"
-          },
-
-          anatomy: {
-            type: "string"
-          },
-
-          musculature: {
-            type: "string"
-          },
-
-          hands_and_fingers: {
-            type: "string"
-          },
-
-          feet_and_toes: {
-            type: "string"
-          },
-
-          breathing: {
-            type: "string"
-          },
-
-          micro_expressions: {
-            type: "string"
-          },
-
-          costume: {
-            type: "string"
-          },
-
-          costume_material: {
-            type: "string"
-          },
-
-          costume_physics: {
-            type: "string"
-          },
-
-          accessories: {
-            type: "string"
-          },
-
-          accessory_physics: {
-            type: "string"
-          },
-
-          movement_signature: {
-            type: "string"
-          },
-
-          emotional_behavior: {
-            type: "string"
-          },
-
-          continuity_rules: {
-            type: "array",
-            items: { type: "string" }
-          },
-
-          forbidden_changes: {
-            type: "array",
-            items: { type: "string" }
-          }
-        },
-
-        required: [
-          "name",
-          "identity_status",
-          "evidence_ids",
-          "physical_identity",
-          "body_proportions",
-          "facial_structure",
-          "face",
-          "eyes",
-          "hair_or_fur",
-          "skin_or_body_texture",
-          "anatomy",
-          "musculature",
-          "hands_and_fingers",
-          "feet_and_toes",
-          "breathing",
-          "micro_expressions",
-          "costume",
-          "costume_material",
-          "costume_physics",
-          "accessories",
-          "accessory_physics",
-          "movement_signature",
-          "emotional_behavior",
-          "continuity_rules",
-          "forbidden_changes"
-        ]
-      }
-    },
-
-    world_bible: {
-      type: "object",
-
-      properties: {
-
-        locations: {
-          type: "array",
-
-          items: {
-            type: "object",
-
-            properties: {
-
-              name: {
-                type: "string"
-              },
-
-              evidence_status: {
-                type: "string"
-              },
-
-              evidence_ids: {
-                type: "array",
-                items: { type: "string" }
-              },
-
-              environment: {
-                type: "string"
-              },
-
-              terrain: {
-                type: "string"
-              },
-
-              vegetation: {
-                type: "string"
-              },
-
-              architecture: {
-                type: "string"
-              },
-
-              props: {
-                type: "string"
-              },
-
-              atmosphere: {
-                type: "string"
-              },
-
-              weather: {
-                type: "string"
-              },
-
-              time_of_day: {
-                type: "string"
-              },
-
-              celestial_conditions: {
-                type: "string"
-              },
-
-              environmental_physics: {
-                type: "array",
-                items: { type: "string" }
-              },
-
-              lighting_conditions: {
-                type: "string"
-              },
-
-              continuity_rules: {
-                type: "array",
-                items: { type: "string" }
-              }
-            },
-
-            required: [
-              "name",
-              "evidence_status",
-              "evidence_ids",
-              "environment",
-              "terrain",
-              "vegetation",
-              "architecture",
-              "props",
-              "atmosphere",
-              "weather",
-              "time_of_day",
-              "celestial_conditions",
-              "environmental_physics",
-              "lighting_conditions",
-              "continuity_rules"
-            ]
-          }
-        },
-
-        global_physical_rules: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        global_visual_rules: {
-          type: "array",
-          items: { type: "string" }
-        }
-      },
-
-      required: [
-        "locations",
-        "global_physical_rules",
-        "global_visual_rules"
-      ]
-    },
-
-    visual_language: {
-      type: "object",
-
-      properties: {
-
-        realism_target: {
-          type: "string"
-        },
-
-        capture_system: {
-          type: "string"
-        },
-
-        visual_emulation: {
-          type: "string"
-        },
-
-        lens_policy: {
-          type: "string"
-        },
-
-        focal_length_strategy: {
-          type: "string"
-        },
-
-        framing: {
-          type: "string"
-        },
-
-        camera_height: {
-          type: "string"
-        },
-
-        camera_movement: {
-          type: "string"
-        },
-
-        focus_behavior: {
-          type: "string"
-        },
-
-        depth_of_field: {
-          type: "string"
-        },
-
-        shutter_motion_behavior: {
-          type: "string"
-        },
-
-        lighting: {
-          type: "string"
-        },
-
-        practical_lighting: {
-          type: "string"
-        },
-
-        shadow_behavior: {
-          type: "string"
-        },
-
-        color_science: {
-          type: "string"
-        },
-
-        contrast_strategy: {
-          type: "string"
-        },
-
-        texture_detail: {
-          type: "string"
-        },
-
-        atmospheric_depth: {
-          type: "string"
-        },
-
-        motion_rendering: {
-          type: "string"
-        },
-
-        vfx_philosophy: {
-          type: "string"
-        }
-      },
-
-      required: [
-        "realism_target",
-        "capture_system",
-        "visual_emulation",
-        "lens_policy",
-        "focal_length_strategy",
-        "framing",
-        "camera_height",
-        "camera_movement",
-        "focus_behavior",
-        "depth_of_field",
-        "shutter_motion_behavior",
-        "lighting",
-        "practical_lighting",
-        "shadow_behavior",
-        "color_science",
-        "contrast_strategy",
-        "texture_detail",
-        "atmospheric_depth",
-        "motion_rendering",
-        "vfx_philosophy"
-      ]
-    },    story_blueprint: {
-      type: "object",
-
-      properties: {
-
-        logline: {
-          type: "string"
-        },
-
-        opening_hook: {
-          type: "string"
-        },
-
-        emotional_arc: {
-          type: "string"
-        },
-
-        escalation: {
-          type: "string"
-        },
-
-        climax: {
-          type: "string"
-        },
-
-        ending_beat: {
-          type: "string"
-        },
-
-        pacing_strategy: {
-          type: "string"
-        },
-
-        beats: {
-          type: "array",
-
-          items: {
-            type: "object",
-
-            properties: {
-
-              beat_number: {
-                type: "number"
-              },
-
-              time_range: {
-                type: "string"
-              },
-
-              duration_seconds: {
-                type: "number"
-              },
-
-              location: {
-                type: "string"
-              },
-
-              evidence_ids: {
-                type: "array",
-                items: {
-                  type: "string"
-                }
-              },
-
-              story_action: {
-                type: "string"
-              },
-
-              character_action: {
-                type: "string"
-              },
-
-              emotional_purpose: {
-                type: "string"
-              },
-
-              visual_priority: {
-                type: "string"
-              },
-
-              transition_to_next: {
-                type: "string"
-              }
-            },
-
-            required: [
-              "beat_number",
-              "time_range",
-              "duration_seconds",
-              "location",
-              "evidence_ids",
-              "story_action",
-              "character_action",
-              "emotional_purpose",
-              "visual_priority",
-              "transition_to_next"
-            ]
-          }
-        }
-      },
-
-      required: [
-        "logline",
-        "opening_hook",
-        "emotional_arc",
-        "escalation",
-        "climax",
-        "ending_beat",
-        "pacing_strategy",
-        "beats"
-      ]
-    },
-
-
-    /* =====================================================
-       CONTINUITY SYSTEM
-    ===================================================== */
-
-    continuity_system: {
-
-      type: "object",
-
-      properties: {
-
-        character_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        face_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        body_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        costume_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        accessory_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        environment_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        lighting_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        temporal_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        geography_continuity: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        action_state_continuity: {
-          type: "array",
-          items: { type: "string" }
 const directorSchema = {
   type: "object",
 
@@ -1668,7 +1050,9 @@ const directorSchema = {
     "directing_rules",
     "quality_control"
   ]
-};/* =========================================================
+};
+
+/* =========================================================
    4. MASTER DIRECTOR INSTRUCTIONS
 ========================================================= */
 
@@ -1774,6 +1158,16 @@ evidence that supports them whenever possible.
 Do NOT create fake evidence IDs.
 
 Only use IDs supplied by the FACT LOCK.
+
+IDENTITY AND VISUAL EVIDENCE ARE SEPARATE
+
+- identity_status describes who the character is.
+- visual_design_status describes how the character looks.
+- A verified identity does not verify visual appearance.
+- Give every important character appearance detail and every important location visual detail its own visual_claim, classification and evidence_ids.
+- Mark a visual_claim VERIFIED only when its cited locked fact or visual research note directly supports that specific claim.
+- A location evidence_status verifies the location identity only; it does not verify terrain, vegetation, architecture, lighting or other visual details.
+- Set visual_design_status to VERIFIED only when every visual_claim is independently VERIFIED.
 
 =========================================================
 4. CHARACTER DIRECTING
@@ -2328,7 +1722,9 @@ spectacle.
 
 Never sacrifice continuity for individual impressive shots.
 
-`;/* =========================================================
+`;
+
+/* =========================================================
    5. DIRECTOR ENGINE + PROGRAMMATIC VALIDATOR
 ========================================================= */
 
@@ -2381,6 +1777,9 @@ IMPORTANT:
 - Never invent evidence IDs.
 - Never replace locked facts.
 - Clearly classify unsupported visual details.
+- Keep identity_status separate from visual_design_status.
+- Add field-level visual_claims for character appearance and location details.
+- Do not mark a visual_claim VERIFIED unless its cited evidence directly supports it.
 - Keep character continuity strict.
 - Keep world continuity strict.
 - Keep time continuity strict.
@@ -2502,6 +1901,134 @@ function collectEvidenceIds(value) {
   walk(value);
 
   return [...ids];
+}
+
+
+function extractSemanticEvidenceTerms(value) {
+
+  const stopWords = new Set([
+    "the", "and", "was", "were", "with", "from", "that", "this",
+    "when", "during", "using", "into", "back", "over", "under",
+    "after", "before", "their", "they", "them", "which", "have",
+    "has", "had", "are", "is", "been", "being", "for", "into",
+    "onto", "its", "his", "her", "who", "what", "where", "there",
+    "here", "character", "location", "visual", "appearance", "design",
+    "detail", "details", "claim", "claims", "verified", "depicted",
+    "shown", "looks", "look", "such", "also", "very", "more", "most"
+  ]);
+
+  return [...new Set(
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .replace(/-/g, " ")
+      .split(/\s+/)
+      .map(token => {
+        if (token === "himalayas" || token === "himalayan") return "himalay";
+        if (token.endsWith("ies") && token.length > 5) return token.slice(0, -3) + "y";
+        if (token.endsWith("s") && token.length > 4) return token.slice(0, -1);
+        return token;
+      })
+      .filter(token => token.length >= 3 && !stopWords.has(token))
+  )];
+}
+
+
+function validateSemanticEvidence(blueprint, factLock) {
+
+  const errors = [];
+  const allowedClassifications = new Set([
+    "VERIFIED",
+    "INFERRED",
+    "CREATIVE_RECONSTRUCTION",
+    "UNKNOWN"
+  ]);
+  const evidenceById = new Map();
+
+  for (const item of factLock?.locked_facts || []) {
+    if (item?.evidence_id) evidenceById.set(item.evidence_id, {
+      kind: "LOCKED_FACT",
+      text: item.claim || ""
+    });
+  }
+
+  for (const item of factLock?.visual_notes || []) {
+    if (item?.evidence_id) evidenceById.set(item.evidence_id, {
+      kind: "VISUAL_NOTE",
+      text: item.description || ""
+    });
+  }
+
+  for (const item of factLock?.creative_reconstructions || []) {
+    if (item?.evidence_id) evidenceById.set(item.evidence_id, {
+      kind: "CREATIVE_RECONSTRUCTION",
+      text: item.description || ""
+    });
+  }
+
+  function inspectClaims(entity, label) {
+    if (!Array.isArray(entity.visual_claims)) {
+      errors.push(label + " is missing its visual_claims array.");
+      return;
+    }
+
+    for (const item of entity.visual_claims) {
+      const claim = String(item?.claim || "").trim();
+      const classification = String(item?.classification || "").toUpperCase();
+      const ids = Array.isArray(item?.evidence_ids) ? item.evidence_ids : [];
+
+      if (!claim) {
+        errors.push(label + " has an empty visual claim.");
+        continue;
+      }
+
+      if (!allowedClassifications.has(classification)) {
+        errors.push(label + " has an invalid visual claim classification: " + classification + ".");
+        continue;
+      }
+
+      if (classification !== "VERIFIED") continue;
+
+      const linkedRecords = ids.map(id => evidenceById.get(id)).filter(Boolean);
+      const directEvidence = linkedRecords.filter(record =>
+        record.kind === "LOCKED_FACT" || record.kind === "VISUAL_NOTE"
+      );
+
+      if (directEvidence.length === 0) {
+        errors.push(label + " marks a visual claim VERIFIED without a linked locked fact or visual research note.");
+        continue;
+      }
+
+      const claimTerms = extractSemanticEvidenceTerms(claim);
+      const evidenceTerms = new Set(
+        directEvidence.flatMap(record => extractSemanticEvidenceTerms(record.text))
+      );
+      const matchedTerms = claimTerms.filter(term => evidenceTerms.has(term));
+      const coverage = claimTerms.length === 0 ? 0 : matchedTerms.length / claimTerms.length;
+
+      if (coverage < 0.75) {
+        errors.push(label + " marks a visual claim VERIFIED, but the cited evidence does not directly support enough of its key terms. Revise the claim/evidence or downgrade it to INFERRED or CREATIVE_RECONSTRUCTION.");
+      }
+    }
+  }
+
+  for (const character of blueprint.character_bible || []) {
+    const label = "Character " + JSON.stringify(character?.name || "(unnamed)");
+    inspectClaims(character || {}, label);
+
+    if (character?.visual_design_status === "VERIFIED") {
+      const claims = Array.isArray(character.visual_claims) ? character.visual_claims : [];
+      if (claims.length === 0 || claims.some(item => item?.classification !== "VERIFIED")) {
+        errors.push(label + " has visual_design_status VERIFIED, but not every visual claim is independently VERIFIED.");
+      }
+    }
+  }
+
+  for (const location of blueprint.world_bible?.locations || []) {
+    inspectClaims(location || {}, "Location " + JSON.stringify(location?.name || "(unnamed)"));
+  }
+
+  return errors;
 }
 
 
@@ -2748,6 +2275,13 @@ function validateBlueprint(
       }
     }
   }
+
+
+  /* -------------------------------------------------------
+     6A. SEMANTIC VISUAL EVIDENCE
+  ------------------------------------------------------- */
+
+  errors.push(...validateSemanticEvidence(blueprint, factLock));
 
 
   /* -------------------------------------------------------
@@ -3206,6 +2740,12 @@ CORRECTION RULES
 
 14. Do not claim validation passed.
 
+15. Keep character identity separate from visual appearance.
+
+16. Correct each visual_claim classification against its own cited evidence.
+
+17. Never treat a verified location name as proof of its visual details.
+
 Return ONLY the corrected JSON blueprint.
 `;
 
@@ -3358,7 +2898,7 @@ export async function createDirectorBlueprint(
   blueprint._longshot_validation = {
 
     validator_version:
-      "V4",
+      "V4.1",
 
     passed:
       true,
