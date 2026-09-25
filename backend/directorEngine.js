@@ -2598,66 +2598,34 @@ function extractImportantTerms(text) {
 ========================================================= */
 
 function parseTimeRange(value) {
-
   if (typeof value !== "string") {
     return null;
   }
 
   const cleaned = value
     .trim()
-    .replace(/[–—]/g, "-")
+    .toLowerCase()
+    .replace(/[–—−]/g, "-")
+    .replace(/\bto\b/g, "-")
+    .replace(/\b(seconds?|secs?|s)\b/g, "")
     .replace(/\s+/g, " ");
 
-  // Format: 00:00 - 00:04
   let match = cleaned.match(
-    /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/
+    /(\d+):(\d{1,2})\s*-\s*(\d+):(\d{1,2})/
   );
 
   if (match) {
-
-    const start =
-      Number(match[1]) * 60 +
-      Number(match[2]);
-
-    const end =
-      Number(match[3]) * 60 +
-      Number(match[4]);
-
     return {
-      start,
-      end
+      start: Number(match[1]) * 60 + Number(match[2]),
+      end: Number(match[3]) * 60 + Number(match[4])
     };
   }
 
-  // Format: 0:00 - 0:04
-  match = cleaned.match(
-    /(\d+):(\d+)\s*-\s*(\d+):(\d+)/
-  );
-
-  if (match) {
-
-    const start =
-      Number(match[1]) * 60 +
-      Number(match[2]);
-
-    const end =
-      Number(match[3]) * 60 +
-      Number(match[4]);
-
-    return {
-      start,
-      end
-    };
-  }
-
-  // Format: 0 - 4
   match = cleaned.match(
     /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
-
   );
 
   if (match) {
-
     return {
       start: Number(match[1]),
       end: Number(match[2])
