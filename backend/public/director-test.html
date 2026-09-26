@@ -215,11 +215,16 @@ console.log("DIRECTOR RESPONSE:", directorData);
       } catch (error) {
         console.error(error);
 
-        status.textContent =
-          "❌ Error";
+       status.textContent =
+  "❌ Error";
 
-        output.textContent =
-          error.message;
+output.textContent =
+  error.message + "\n\n" +
+  JSON.stringify(
+    error,
+    null,
+    2
+  );
       }
     }
 
