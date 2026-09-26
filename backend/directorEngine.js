@@ -1317,7 +1317,7 @@ Return ONLY valid JSON matching the provided schema.
       instruction
   });
 
- if (!response?.output_text) {
+if (!response?.output_text) {
   throw new Error(
     "Director Engine returned empty output. RAW RESPONSE: " +
     JSON.stringify(response)
@@ -1338,12 +1338,6 @@ try {
     "Director Engine returned invalid JSON. RAW OUTPUT: " +
     response.output_text
   );
-}
-  } catch {
-    throw new Error(
-      "Director Engine returned invalid JSON."
-    );
-  }
 }
 
 
