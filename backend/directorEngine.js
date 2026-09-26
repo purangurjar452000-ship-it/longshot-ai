@@ -12,9 +12,9 @@ const ai = new GoogleGenAI({
 
 
 /* =========================================================
-   LONGSHOT AI — DIRECTOR ENGINE V4.5
-   Research → Fact Lock → Director → Semantic Validator
-   → Auto Correction → Final Blueprint
+   LONGSHOT AI — DIRECTOR ENGINE V4.6
+   Research → Fact Lock → Identity Lock → Director
+   → Semantic Validator → Auto Correction → Final Blueprint
 ========================================================= */
 
 
@@ -145,6 +145,7 @@ function buildFactLock(research) {
 ========================================================= */
 
 const directorSchema = {
+
   type: "object",
 
   properties: {
@@ -152,14 +153,37 @@ const directorSchema = {
     project: {
       type: "object",
       properties: {
-        title: { type: "string" },
-        concept: { type: "string" },
-        domain: { type: "string" },
-        duration_seconds: { type: "number" },
-        aspect_ratio: { type: "string" },
-        creative_intent: { type: "string" },
-        realism_target: { type: "string" }
+
+        title: {
+          type: "string"
+        },
+
+        concept: {
+          type: "string"
+        },
+
+        domain: {
+          type: "string"
+        },
+
+        duration_seconds: {
+          type: "number"
+        },
+
+        aspect_ratio: {
+          type: "string"
+        },
+
+        creative_intent: {
+          type: "string"
+        },
+
+        realism_target: {
+          type: "string"
+        }
+
       },
+
       required: [
         "title",
         "concept",
@@ -171,17 +195,31 @@ const directorSchema = {
       ]
     },
 
+
     evidence_policy: {
+
       type: "object",
+
       properties: {
 
         locked_facts: {
+
           type: "array",
+
           items: {
+
             type: "object",
+
             properties: {
-              evidence_id: { type: "string" },
-              claim: { type: "string" },
+
+              evidence_id: {
+                type: "string"
+              },
+
+              claim: {
+                type: "string"
+              },
+
               status: {
                 type: "string",
                 enum: [
@@ -191,7 +229,9 @@ const directorSchema = {
                   "UNKNOWN"
                 ]
               }
+
             },
+
             required: [
               "evidence_id",
               "claim",
@@ -247,10 +287,17 @@ const directorSchema = {
       ]
     },
 
+
+    /* =====================================================
+       CHARACTER BIBLE
+    ===================================================== */
+
     character_bible: {
+
       type: "array",
 
       items: {
+
         type: "object",
 
         properties: {
@@ -289,9 +336,11 @@ const directorSchema = {
           },
 
           visual_claims: {
+
             type: "array",
 
             items: {
+
               type: "object",
 
               properties: {
@@ -326,6 +375,141 @@ const directorSchema = {
               ]
             }
           },
+
+
+          /* =================================================
+             EXPLICIT AGE
+          ================================================= */
+
+          apparent_age: {
+            type: "string"
+          },
+
+
+          /* =================================================
+             IMMUTABLE CHARACTER IDENTITY LOCK
+          ================================================= */
+
+          character_identity_lock: {
+
+            type: "object",
+
+            properties: {
+
+              canonical_name: {
+                type: "string"
+              },
+
+              identity_type: {
+                type: "string"
+              },
+
+              apparent_age: {
+                type: "string"
+              },
+
+              face_identity: {
+                type: "string"
+              },
+
+              facial_structure: {
+                type: "string"
+              },
+
+              eyes: {
+                type: "string"
+              },
+
+              hair_or_fur: {
+                type: "string"
+              },
+
+              skin_or_body_texture: {
+                type: "string"
+              },
+
+              body_type: {
+                type: "string"
+              },
+
+              height_or_scale: {
+                type: "string"
+              },
+
+              body_proportions: {
+                type: "string"
+              },
+
+              musculature: {
+                type: "string"
+              },
+
+              anatomy: {
+                type: "string"
+              },
+
+              costume: {
+                type: "string"
+              },
+
+              costume_colors: {
+                type: "string"
+              },
+
+              costume_material: {
+                type: "string"
+              },
+
+              costume_physics: {
+                type: "string"
+              },
+
+              accessories: {
+                type: "string"
+              },
+
+              signature_features: {
+                type: "string"
+              },
+
+              movement_signature: {
+                type: "string"
+              },
+
+              forbidden_substitutions: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              }
+
+            },
+
+            required: [
+              "canonical_name",
+              "identity_type",
+              "apparent_age",
+              "face_identity",
+              "facial_structure",
+              "eyes",
+              "hair_or_fur",
+              "skin_or_body_texture",
+              "body_type",
+              "height_or_scale",
+              "body_proportions",
+              "musculature",
+              "anatomy",
+              "costume",
+              "costume_colors",
+              "costume_material",
+              "costume_physics",
+              "accessories",
+              "signature_features",
+              "movement_signature",
+              "forbidden_substitutions"
+            ]
+          },
+
 
           physical_identity: {
             type: "string"
@@ -424,11 +608,16 @@ const directorSchema = {
         },
 
         required: [
+
           "name",
           "identity_status",
           "visual_design_status",
           "evidence_ids",
           "visual_claims",
+
+          "apparent_age",
+          "character_identity_lock",
+
           "physical_identity",
           "body_proportions",
           "facial_structure",
@@ -454,6 +643,7 @@ const directorSchema = {
         ]
       }
     },
+
 
     world_bible: {
 
@@ -634,6 +824,7 @@ const directorSchema = {
       ]
     },
 
+
     visual_language: {
 
       type: "object",
@@ -745,6 +936,7 @@ const directorSchema = {
         "vfx_philosophy"
       ]
     },
+
 
     story_blueprint: {
 
@@ -876,6 +1068,7 @@ const directorSchema = {
       ]
     },
 
+
     continuity_system: {
 
       type: "object",
@@ -884,57 +1077,79 @@ const directorSchema = {
 
         character_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         face_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         body_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         costume_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         accessory_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         environment_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         lighting_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         temporal_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         geography_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         action_state_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         },
 
         physics_continuity: {
           type: "array",
-          items: { type: "string" }
+          items: {
+            type: "string"
+          }
         }
 
       },
@@ -954,12 +1169,14 @@ const directorSchema = {
       ]
     },
 
+
     directing_rules: {
       type: "array",
       items: {
         type: "string"
       }
     },
+
 
     quality_control: {
 
@@ -1043,8 +1260,8 @@ material into a production-ready cinematic blueprint.
 You are NOT the final video generator.
 
 You are the creative director, continuity supervisor,
-visual realism supervisor, story architect and
-fact-integrity supervisor.
+visual realism supervisor, story architect,
+character identity supervisor and fact-integrity supervisor.
 
 =========================================================
 CORE PIPELINE
@@ -1052,13 +1269,213 @@ CORE PIPELINE
 
 RESEARCH
 → FACT LOCK
+→ CHARACTER IDENTITY LOCK
 → DIRECTOR
 → PROGRAMMATIC SEMANTIC VALIDATOR
 → AUTO CORRECTION IF REQUIRED
 → FINAL BLUEPRINT
 
 =========================================================
-ABSOLUTE DIRECTOR RULE
+ABSOLUTE CHARACTER IDENTITY RULE
+=========================================================
+
+A canonical character identity is IMMUTABLE.
+
+The character_bible is the single source of truth for
+every visible character.
+
+For EVERY character create a complete identity definition
+containing:
+
+- exact canonical name
+- identity type
+- apparent age or qualified age range
+- face identity
+- facial structure
+- eyes
+- hair/fur
+- skin/body texture
+- body type
+- height/scale
+- body proportions
+- musculature
+- anatomy
+- costume
+- costume colors
+- costume material
+- costume physics
+- accessories
+- signature features
+- movement signature
+- forbidden substitutions
+
+These fields together form the CHARACTER IDENTITY LOCK.
+
+The identity lock must remain unchanged throughout
+the entire video.
+
+=========================================================
+CHARACTER SUBSTITUTION IS FORBIDDEN
+=========================================================
+
+NEVER replace a canonical character with:
+
+- generic warrior
+- generic soldier
+- generic commander
+- generic king
+- generic monk
+- generic physician
+- generic man
+- generic woman
+- unnamed warrior
+- unnamed soldier
+- random historical warrior
+- random fantasy character
+- random injured soldier
+- random commander
+- another character with a similar role
+
+A character's ROLE is NOT their IDENTITY.
+
+For example:
+
+If the story specifies a named character,
+do not reinterpret that character as:
+
+"an ancient warrior"
+
+"an injured commander"
+
+"an Alexander-era soldier"
+
+"an unnamed king"
+
+or any other generic archetype.
+
+The exact canonical character must remain the visible
+character.
+
+=========================================================
+AGE CONTINUITY
+=========================================================
+
+Every character must have an apparent_age field.
+
+If the exact age is historically, textually or
+research-wise unknown, DO NOT invent an exact numerical age.
+
+Instead use a qualified description such as:
+
+- child
+- adolescent
+- young adult
+- adult
+- mature adult
+- elderly
+- ageless / supernatural
+- traditional depiction: mature adult
+- age unknown; mature adult appearance for cinematic reconstruction
+
+The qualified age must remain visually consistent.
+
+Do not make the character young in one scene and elderly
+in another unless the story explicitly contains aging.
+
+=========================================================
+FACE IDENTITY LOCK
+=========================================================
+
+Once a face identity is established:
+
+DO NOT change:
+
+- facial structure
+- face shape
+- jaw
+- cheek structure
+- nose
+- eyes
+- eyebrows
+- hairline
+- distinctive facial features
+- skin/fur pattern
+- scars
+- facial markings
+
+Do not create a new face for the same canonical character.
+
+=========================================================
+BODY IDENTITY LOCK
+=========================================================
+
+Maintain:
+
+- body type
+- height
+- proportions
+- shoulder width
+- torso proportions
+- limb proportions
+- musculature
+- anatomy
+- hand structure
+- feet structure
+
+Do not randomly change the character's body.
+
+=========================================================
+COSTUME IDENTITY LOCK
+=========================================================
+
+Maintain:
+
+- exact costume identity
+- costume colors
+- costume material
+- major garment structure
+- armor/clothing identity
+- accessories
+- ornaments
+- weapons/tools
+- footwear
+- signature items
+
+Costume changes are allowed ONLY when caused by an
+explicit story event such as damage, removal, replacement,
+wetness, dirt, blood or a documented costume transition.
+
+=========================================================
+IDENTITY FINGERPRINT
+=========================================================
+
+Internally treat every character as an immutable identity
+fingerprint:
+
+CANONICAL NAME
++
+APPARENT AGE
++
+FACE
++
+BODY
++
+HAIR/FUR
++
+SKIN/BODY TEXTURE
++
+COSTUME
++
+ACCESSORIES
++
+SIGNATURE FEATURES
++
+MOVEMENT SIGNATURE
+
+Every beat must reference the same fingerprint.
+
+=========================================================
+CORE PIPELINE RULE
 =========================================================
 
 Every beat must be physically, geographically,
@@ -1150,8 +1567,12 @@ Build a complete character bible.
 
 Maintain stable:
 
+- identity
+- apparent age
 - facial structure
+- face
 - body proportions
+- height/scale
 - musculature
 - skin/fur
 - hair/fur
@@ -1167,6 +1588,7 @@ Maintain stable:
 - costume
 - materials
 - accessories
+- signature features
 
 Do not randomly change face, body, hairstyle,
 costume, age appearance or skin/fur texture.
@@ -1359,22 +1781,19 @@ C. CAN THAT ACTION PHYSICALLY HAPPEN AT THAT LOCATION?
 D. IF THEY ARE TRAVELLING, IS THE TRAVEL SHOWN?
 
 E. DOES THE LOCATION MATCH THE ENVIRONMENT IMPLIED
-   BY THE action?
+   BY THE ACTION?
 
 F. DOES THE TIME MATCH THE LIGHTING?
 
 G. DOES THE BEAT INHERIT THE PREVIOUS LOCATION,
    ACTION STATE, WEATHER AND TIME?
 
-H. ARE ALL LISTED CHARACTERS physically present?
+H. ARE ALL LISTED CHARACTERS PHYSICALLY PRESENT?
 
 I. DOES THE BEAT CONTAIN TOO MANY MAJOR ACTIONS
    FOR ITS DURATION?
 
-J. IF THE LOCATION CHANGES, IS THE TRANSITION
-   EXPLICIT?
-
-Never output a beat that fails these checks.
+J. IF THE LOCATION CHANGES, IS THE TRANSITION EXPLICIT?
 
 =========================================================
 14. CINEMATOGRAPHY
@@ -1494,7 +1913,10 @@ Distinguish:
 
 Prevent:
 
+- changing canonical character identity
+- replacing named characters with generic archetypes
 - changing faces
+- changing ages
 - changing costumes
 - changing body proportions
 - extra fingers
@@ -1518,8 +1940,13 @@ Prevent:
 
 Track:
 
+character_identity_state
 character_state
+age_state
+face_state
+body_state
 costume_state
+accessory_state
 location_state
 lighting_state
 time_state
@@ -1540,25 +1967,31 @@ Before output inspect:
 1. Fact integrity
 2. Evidence classification
 3. Evidence traceability
-4. Character continuity
-5. Costume continuity
-6. Location continuity
-7. Geography continuity
-8. Time continuity
-9. Lighting continuity
-10. Physics continuity
-11. Story continuity
-12. Duration
-13. Camera consistency
-14. Lens consistency
-15. Realism
-16. Anatomy
-17. VFX restraint
-18. AI error prevention
-19. Beat action/location compatibility
-20. Beat temporal compatibility
-21. Action density
-22. Physical character presence
+4. Character identity
+5. Character age
+6. Face continuity
+7. Body continuity
+8. Costume continuity
+9. Accessory continuity
+10. Character continuity
+11. Location continuity
+12. Geography continuity
+13. Time continuity
+14. Lighting continuity
+15. Physics continuity
+16. Story continuity
+17. Duration
+18. Camera consistency
+19. Lens consistency
+20. Realism
+21. Anatomy
+22. VFX restraint
+23. AI error prevention
+24. Beat action/location compatibility
+25. Beat temporal compatibility
+26. Action density
+27. Physical character presence
+28. Generic character substitution prevention
 
 If a conflict is found:
 
@@ -1569,6 +2002,8 @@ CORRECT IT BEFORE OUTPUT.
 =========================================================
 
 FACTUALLY CONTROLLED
++
+CHARACTER-IDENTITY LOCKED
 +
 CINEMATICALLY POWERFUL
 +
@@ -1587,6 +2022,8 @@ Never sacrifice factual integrity for cinematic style.
 Never sacrifice physical realism for spectacle.
 
 Never sacrifice continuity for an impressive individual shot.
+
+Never replace a canonical character with a generic archetype.
 
 `;
 
@@ -1619,25 +2056,103 @@ ${aspectRatio}
 RESEARCH DATA
 =========================================================
 
-${JSON.stringify(research, null, 2)}
+${JSON.stringify(
+  research,
+  null,
+  2
+)}
 
 =========================================================
 FACT LOCK
 =========================================================
 
-${JSON.stringify(factLock, null, 2)}
+${JSON.stringify(
+  factLock,
+  null,
+  2
+)}
 
 =========================================================
 AVAILABLE EVIDENCE IDS — CLOSED LIST
 =========================================================
 
 ${JSON.stringify([
-  ...(factLock.locked_facts || []).map(item => item.evidence_id),
-  ...(factLock.creative_reconstructions || []).map(item => item.evidence_id),
-  ...(factLock.visual_notes || []).map(item => item.evidence_id)
+  ...(factLock.locked_facts || [])
+    .map(item => item.evidence_id),
+
+  ...(factLock.creative_reconstructions || [])
+    .map(item => item.evidence_id),
+
+  ...(factLock.visual_notes || [])
+    .map(item => item.evidence_id)
+
 ], null, 2)}
 
 Use ONLY IDs from this list.
+
+=========================================================
+FINAL CHARACTER IDENTITY REQUIREMENTS
+=========================================================
+
+For every character in character_bible:
+
+1. Preserve the exact canonical name.
+
+2. Provide apparent_age.
+
+3. If exact age is unknown, use a qualified age
+   description rather than inventing an exact number.
+
+4. Provide character_identity_lock.
+
+5. character_identity_lock.canonical_name MUST exactly
+   match character_bible.name.
+
+6. character_identity_lock.apparent_age MUST match
+   character.apparent_age.
+
+7. Define face identity.
+
+8. Define facial structure.
+
+9. Define eyes.
+
+10. Define hair/fur.
+
+11. Define skin/body texture.
+
+12. Define body type.
+
+13. Define height/scale.
+
+14. Define body proportions.
+
+15. Define musculature.
+
+16. Define anatomy.
+
+17. Define costume.
+
+18. Define costume colors.
+
+19. Define costume material.
+
+20. Define costume physics.
+
+21. Define accessories.
+
+22. Define signature features.
+
+23. Define movement signature.
+
+24. Provide forbidden_substitutions.
+
+25. Never use a generic warrior, soldier, commander,
+    king, monk, physician, injured soldier or similar
+    archetype as a substitute for a named character.
+
+26. The character identity must remain immutable across
+    every beat.
 
 =========================================================
 FINAL INSTRUCTION
@@ -1656,6 +2171,11 @@ IMPORTANT:
 - Preserve every canonical person, object and location name.
 - Reproduce locked events and causal relationships.
 - Keep character continuity strict.
+- Keep character identity strict.
+- Keep age continuity strict.
+- Keep face continuity strict.
+- Keep body continuity strict.
+- Keep costume continuity strict.
 - Keep world continuity strict.
 - Keep time continuity strict.
 - Keep geography continuity strict.
@@ -1675,6 +2195,10 @@ IMPORTANT:
 - Do not combine incompatible temporal states.
 - Do not compress too many independent major actions into
   a short beat.
+- Do not substitute a canonical character with a generic role.
+- Do not create an "Alexander commander", "ancient warrior",
+  "injured soldier", "random commander" or similar replacement
+  when the researched character has a different canonical identity.
 - Do not claim an audit passed unless the blueprint actually
   satisfies these requirements.
 
@@ -1702,7 +2226,9 @@ Return ONLY valid JSON matching the supplied schema.
 
   try {
 
-    return JSON.parse(response.output_text);
+    return JSON.parse(
+      response.output_text
+    );
 
   } catch (error) {
 
@@ -1717,26 +2243,44 @@ Return ONLY valid JSON matching the supplied schema.
    6. UTILITY FUNCTIONS
 ========================================================= */
 
-function collectAllStrings(value, result = []) {
+function collectAllStrings(
+  value,
+  result = []
+) {
 
   if (typeof value === "string") {
+
     result.push(value);
+
     return result;
   }
 
   if (Array.isArray(value)) {
 
     for (const item of value) {
-      collectAllStrings(item, result);
+
+      collectAllStrings(
+        item,
+        result
+      );
     }
 
     return result;
   }
 
-  if (value && typeof value === "object") {
+  if (
+    value &&
+    typeof value === "object"
+  ) {
 
-    for (const key of Object.keys(value)) {
-      collectAllStrings(value[key], result);
+    for (
+      const key of Object.keys(value)
+    ) {
+
+      collectAllStrings(
+        value[key],
+        result
+      );
     }
   }
 
@@ -1754,25 +2298,40 @@ function collectEvidenceIds(value) {
 
     if (Array.isArray(item)) {
 
-      for (const child of item) {
+      for (
+        const child
+        of item
+      ) {
+
         walk(child);
       }
 
       return;
     }
 
-    if (typeof item === "object") {
+    if (
+      typeof item === "object"
+    ) {
 
-      for (const [key, child] of Object.entries(item)) {
+      for (
+        const [key, child]
+        of Object.entries(item)
+      ) {
 
         if (
           key === "evidence_ids" &&
           Array.isArray(child)
         ) {
 
-          for (const id of child) {
+          for (
+            const id
+            of child
+          ) {
 
-            if (typeof id === "string") {
+            if (
+              typeof id === "string"
+            ) {
+
               ids.add(id);
             }
           }
@@ -1785,60 +2344,137 @@ function collectEvidenceIds(value) {
 
   walk(value);
 
-  return [...ids];
+  return [
+    ...ids
+  ];
 }
 
 
-function extractSemanticEvidenceTerms(value) {
+function extractSemanticEvidenceTerms(
+  value
+) {
 
   const stopWords = new Set([
-    "the", "and", "was", "were", "with", "from", "that", "this",
-    "when", "during", "using", "into", "back", "over", "under",
-    "after", "before", "their", "they", "them", "which", "have",
-    "has", "had", "are", "is", "been", "being", "for", "onto",
-    "its", "his", "her", "who", "what", "where", "there", "here",
-    "character", "location", "visual", "appearance", "design",
-    "detail", "details", "claim", "claims", "verified", "depicted",
-    "shown", "looks", "look", "such", "also", "very", "more", "most"
+
+    "the",
+    "and",
+    "was",
+    "were",
+    "with",
+    "from",
+    "that",
+    "this",
+    "when",
+    "during",
+    "using",
+    "into",
+    "back",
+    "over",
+    "under",
+    "after",
+    "before",
+    "their",
+    "they",
+    "them",
+    "which",
+    "have",
+    "has",
+    "had",
+    "are",
+    "is",
+    "been",
+    "being",
+    "for",
+    "onto",
+    "its",
+    "his",
+    "her",
+    "who",
+    "what",
+    "where",
+    "there",
+    "here",
+    "character",
+    "location",
+    "visual",
+    "appearance",
+    "design",
+    "detail",
+    "details",
+    "claim",
+    "claims",
+    "verified",
+    "depicted",
+    "shown",
+    "looks",
+    "look",
+    "such",
+    "also",
+    "very",
+    "more",
+    "most"
+
   ]);
 
-  return [...new Set(
-    String(value || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, " ")
-      .replace(/-/g, " ")
-      .split(/\s+/)
-      .map(token => {
+  return [
+    ...new Set(
 
-        if (
-          token === "himalayas" ||
-          token === "himalayan"
-        ) {
-          return "himalay";
-        }
-
-        if (
-          token.endsWith("ies") &&
-          token.length > 5
-        ) {
-          return token.slice(0, -3) + "y";
-        }
-
-        if (
-          token.endsWith("s") &&
-          token.length > 4
-        ) {
-          return token.slice(0, -1);
-        }
-
-        return token;
-      })
-      .filter(
-        token =>
-          token.length >= 3 &&
-          !stopWords.has(token)
+      String(
+        value || ""
       )
-  )];
+        .toLowerCase()
+        .replace(
+          /[^a-z0-9\s-]/g,
+          " "
+        )
+        .replace(
+          /-/g,
+          " "
+        )
+        .split(/\s+/)
+        .map(
+          token => {
+
+            if (
+              token === "himalayas" ||
+              token === "himalayan"
+            ) {
+
+              return "himalay";
+            }
+
+            if (
+              token.endsWith("ies") &&
+              token.length > 5
+            ) {
+
+              return (
+                token.slice(0, -3) +
+                "y"
+              );
+            }
+
+            if (
+              token.endsWith("s") &&
+              token.length > 4
+            ) {
+
+              return token.slice(
+                0,
+                -1
+              );
+            }
+
+            return token;
+          }
+        )
+        .filter(
+          token =>
+            token.length >= 3 &&
+            !stopWords.has(token)
+        )
+    )
+  ];
 }
 
 
@@ -1846,63 +2482,402 @@ function extractSemanticEvidenceTerms(value) {
    7. SEMANTIC NORMALIZATION HELPERS
 ========================================================= */
 
-function normalizeSemanticText(value) {
+function normalizeSemanticText(
+  value
+) {
 
-  return String(value || "")
+  return String(
+    value || ""
+  )
     .toLowerCase()
-    .replace(/[–—−]/g, "-")
-    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
-    .replace(/\s+/g, " ")
+    .replace(
+      /[–—−]/g,
+      "-"
+    )
+    .replace(
+      /[^\p{L}\p{N}\s-]/gu,
+      " "
+    )
+    .replace(
+      /\s+/g,
+      " "
+    )
     .trim();
 }
 
 
-function buildBeatText(beat) {
+function buildBeatText(
+  beat
+) {
 
-  return normalizeSemanticText([
-    beat?.story_action,
-    beat?.character_action,
-    beat?.emotional_purpose,
-    beat?.visual_priority,
-    beat?.transition_to_next
-  ]
-    .filter(Boolean)
-    .join(" "));
-}
+  return normalizeSemanticText(
 
+    [
+      beat?.story_action,
+      beat?.character_action,
+      beat?.emotional_purpose,
+      beat?.visual_priority,
+      beat?.transition_to_next
+    ]
+      .filter(Boolean)
+      .join(" ")
 
-function containsAny(text, terms) {
-
-  const normalized = normalizeSemanticText(text);
-
-  return terms.some(term =>
-    normalized.includes(
-      normalizeSemanticText(term)
-    )
   );
 }
 
 
-function countMatches(text, terms) {
+function containsAny(
+  text,
+  terms
+) {
 
-  const normalized = normalizeSemanticText(text);
+  const normalized =
+    normalizeSemanticText(
+      text
+    );
+
+  return terms.some(
+    term =>
+      normalized.includes(
+        normalizeSemanticText(
+          term
+        )
+      )
+  );
+}
+
+
+function countMatches(
+  text,
+  terms
+) {
+
+  const normalized =
+    normalizeSemanticText(
+      text
+    );
 
   return terms.reduce(
-    (count, term) =>
+
+    (
+      count,
+      term
+    ) =>
       count +
-      (normalized.includes(
-        normalizeSemanticText(term)
-      ) ? 1 : 0),
+      (
+        normalized.includes(
+          normalizeSemanticText(
+            term
+          )
+        )
+          ? 1
+          : 0
+      ),
+
     0
   );
 }
 
 
 /* =========================================================
-   8. SEMANTIC BEAT VALIDATOR — FINAL FIXED VERSION
+   8. CHARACTER IDENTITY LOCK VALIDATOR
 ========================================================= */
 
-function validateBeatSemanticContinuity(blueprint) {
+function validateCharacterIdentityLocks(
+  blueprint
+) {
+
+  const errors = [];
+
+  const characters =
+    Array.isArray(
+      blueprint?.character_bible
+    )
+      ? blueprint.character_bible
+      : [];
+
+
+  const requiredLockFields = [
+
+    "canonical_name",
+    "identity_type",
+    "apparent_age",
+    "face_identity",
+    "facial_structure",
+    "eyes",
+    "hair_or_fur",
+    "skin_or_body_texture",
+    "body_type",
+    "height_or_scale",
+    "body_proportions",
+    "musculature",
+    "anatomy",
+    "costume",
+    "costume_colors",
+    "costume_material",
+    "costume_physics",
+    "accessories",
+    "signature_features",
+    "movement_signature"
+
+  ];
+
+
+  const forbiddenGenericIdentityTerms = [
+
+    "generic warrior",
+    "generic soldier",
+    "generic commander",
+    "generic king",
+    "generic monk",
+    "generic physician",
+    "generic man",
+    "generic woman",
+
+    "unnamed warrior",
+    "unnamed soldier",
+    "unnamed commander",
+
+    "random warrior",
+    "random soldier",
+    "random commander",
+
+    "unknown warrior",
+    "unknown soldier",
+    "unknown commander",
+
+    "ancient warrior",
+    "injured warrior",
+    "injured soldier",
+    "injured commander",
+
+    "alexander commander",
+    "alexander's commander",
+    "alexander era soldier",
+    "alexander-era soldier"
+
+  ];
+
+
+  for (
+    const character
+    of characters
+  ) {
+
+    const name =
+      String(
+        character?.name || ""
+      ).trim();
+
+
+    if (!name) {
+
+      errors.push(
+        "Character identity lock validation failed: character has no canonical name."
+      );
+
+      continue;
+    }
+
+
+    const apparentAge =
+      String(
+        character?.apparent_age || ""
+      ).trim();
+
+
+    if (!apparentAge) {
+
+      errors.push(
+        `Character "${name}" is missing apparent_age.`
+      );
+    }
+
+
+    const lock =
+      character?.character_identity_lock;
+
+
+    if (
+      !lock ||
+      typeof lock !== "object"
+    ) {
+
+      errors.push(
+        `Character "${name}" is missing character_identity_lock.`
+      );
+
+      continue;
+    }
+
+
+    const canonicalName =
+      String(
+        lock.canonical_name || ""
+      ).trim();
+
+
+    if (
+      canonicalName !==
+      name
+    ) {
+
+      errors.push(
+        `Character "${name}" has identity lock canonical_name "${canonicalName}" which does not exactly match the character name.`
+      );
+    }
+
+
+    const lockAge =
+      String(
+        lock.apparent_age || ""
+      ).trim();
+
+
+    if (!lockAge) {
+
+      errors.push(
+        `Character "${name}" identity lock is missing apparent_age.`
+      );
+    }
+
+
+    if (
+      apparentAge &&
+      lockAge &&
+      normalizeSemanticText(
+        apparentAge
+      ) !==
+      normalizeSemanticText(
+        lockAge
+      )
+    ) {
+
+      errors.push(
+        `Character "${name}" has mismatched age between character.apparent_age and character_identity_lock.apparent_age.`
+      );
+    }
+
+
+    for (
+      const field
+      of requiredLockFields
+    ) {
+
+      const value =
+        lock[field];
+
+
+      if (
+        field ===
+        "apparent_age"
+      ) {
+        continue;
+      }
+
+
+      if (
+        !value ||
+        (
+          typeof value === "string" &&
+          value.trim() === ""
+        ) ||
+        (
+          Array.isArray(value) &&
+          value.length === 0
+        )
+      ) {
+
+        errors.push(
+          `Character "${name}" identity lock is missing required field: ${field}.`
+        );
+      }
+    }
+
+
+    if (
+      !Array.isArray(
+        lock.forbidden_substitutions
+      ) ||
+      lock.forbidden_substitutions.length === 0
+    ) {
+
+      errors.push(
+        `Character "${name}" identity lock must contain forbidden_substitutions.`
+      );
+    }
+
+
+    const identityText =
+      normalizeSemanticText(
+
+        [
+          lock.identity_type,
+          lock.face_identity,
+          lock.facial_structure,
+          lock.body_type,
+          lock.costume,
+          lock.signature_features,
+          ...(Array.isArray(
+            lock.forbidden_substitutions
+          )
+            ? lock.forbidden_substitutions
+            : [])
+
+        ]
+          .filter(Boolean)
+          .join(" ")
+
+      );
+
+
+    for (
+      const forbiddenTerm
+      of forbiddenGenericIdentityTerms
+    ) {
+
+      if (
+        identityText.includes(
+          normalizeSemanticText(
+            forbiddenTerm
+          )
+        )
+      ) {
+
+        errors.push(
+          `Character "${name}" identity lock contains forbidden generic substitution language: "${forbiddenTerm}".`
+        );
+      }
+    }
+
+
+    if (
+      normalizeSemanticText(
+        lock.canonical_name
+      ) ===
+      normalizeSemanticText(
+        "generic warrior"
+      )
+    ) {
+
+      errors.push(
+        `Character "${name}" cannot use a generic archetype as canonical identity.`
+      );
+    }
+  }
+
+
+  return errors;
+}
+
+
+/* =========================================================
+   9. SEMANTIC BEAT VALIDATOR
+========================================================= */
+
+function validateBeatSemanticContinuity(
+  blueprint
+) {
 
   const errors = [];
   const warnings = [];
@@ -1915,24 +2890,50 @@ function validateBeatSemanticContinuity(blueprint) {
 
   const locationMap =
     new Map(
+
       locations
-        .map(location => [
-          normalizeSemanticText(location?.name),
-          location
-        ])
-        .filter(([name]) => name)
+
+        .map(
+          location => [
+
+            normalizeSemanticText(
+              location?.name
+            ),
+
+            location
+
+          ]
+        )
+
+        .filter(
+          ([name]) => name
+        )
+
     );
+
 
   const characterNames =
     new Set(
-      (blueprint?.character_bible || [])
-        .map(character =>
-          String(character?.name || "").trim()
+
+      (
+        blueprint?.character_bible ||
+        []
+      )
+
+        .map(
+          character =>
+            String(
+              character?.name || ""
+            ).trim()
         )
+
         .filter(Boolean)
+
     );
 
+
   const travelTerms = [
+
     "fly",
     "flying",
     "flew",
@@ -1973,9 +2974,12 @@ function validateBeatSemanticContinuity(blueprint) {
     "ascend",
     "ascending",
     "descend"
+
   ];
 
+
   const fixedLocationTerms = [
+
     "camp",
     "encampment",
     "room",
@@ -1996,9 +3000,12 @@ function validateBeatSemanticContinuity(blueprint) {
     "cave",
     "garden",
     "courtyard"
+
   ];
 
+
   const destinationTerms = [
+
     "toward",
     "towards",
     "to ",
@@ -2010,7 +3017,9 @@ function validateBeatSemanticContinuity(blueprint) {
     "return",
     "returns",
     "returning"
+
   ];
+
 
   const temporalGroups = {
 
@@ -2050,7 +3059,9 @@ function validateBeatSemanticContinuity(blueprint) {
       "dusk",
       "twilight"
     ]
+
   };
+
 
   const majorActionGroups = [
 
@@ -2137,47 +3148,71 @@ function validateBeatSemanticContinuity(blueprint) {
       "ascends",
       "ascending"
     ]
+
   ];
 
 
-  function getLocation(beat) {
+  function getLocation(
+    beat
+  ) {
 
     const key =
-      normalizeSemanticText(beat?.location);
+      normalizeSemanticText(
+        beat?.location
+      );
 
-    return locationMap.get(key) || null;
+    return (
+      locationMap.get(
+        key
+      ) ||
+      null
+    );
   }
 
 
-  function getLocationEnvironment(location) {
+  function getLocationEnvironment(
+    location
+  ) {
 
-    if (!location) return "";
+    if (!location) {
+      return "";
+    }
 
-    return normalizeSemanticText([
-      location.name,
-      location.environment,
-      location.terrain,
-      location.vegetation,
-      location.architecture,
-      location.props,
-      location.atmosphere,
-      location.weather,
-      location.time_of_day,
-      location.celestial_conditions,
-      location.lighting_conditions
-    ]
-      .filter(Boolean)
-      .join(" "));
+    return normalizeSemanticText(
+
+      [
+        location.name,
+        location.environment,
+        location.terrain,
+        location.vegetation,
+        location.architecture,
+        location.props,
+        location.atmosphere,
+        location.weather,
+        location.time_of_day,
+        location.celestial_conditions,
+        location.lighting_conditions
+      ]
+
+        .filter(Boolean)
+
+        .join(" ")
+
+    );
   }
 
 
-  function getTemporalStates(text) {
+  function getTemporalStates(
+    text
+  ) {
 
     const states = [];
 
     for (
       const [state, terms]
-      of Object.entries(temporalGroups)
+      of Object.entries(
+        temporalGroups
+      )
     ) {
 
       if (
@@ -2186,7 +3221,10 @@ function validateBeatSemanticContinuity(blueprint) {
           terms
         )
       ) {
-        states.push(state);
+
+        states.push(
+          state
+        );
       }
     }
 
@@ -2204,31 +3242,42 @@ function validateBeatSemanticContinuity(blueprint) {
     }
 
     const beatText =
-      buildBeatText(beat);
+      buildBeatText(
+        beat
+      );
 
     const locationText =
-      normalizeSemanticText([
-        location.time_of_day || "",
-        location.lighting_conditions || "",
-        location.celestial_conditions || ""
-      ].join(" "));
+      normalizeSemanticText(
+
+        [
+          location.time_of_day || "",
+          location.lighting_conditions || "",
+          location.celestial_conditions || ""
+        ].join(" ")
+
+      );
+
 
     const beatTemporalStates =
       getTemporalStates(
         beatText
       );
 
+
     const locationTemporalStates =
       getTemporalStates(
         locationText
       );
 
+
     if (
       beatTemporalStates.length === 0 ||
       locationTemporalStates.length === 0
     ) {
+
       return false;
     }
+
 
     const incompatiblePairs = [
 
@@ -2242,14 +3291,20 @@ function validateBeatSemanticContinuity(blueprint) {
       ["dawn", "night"],
       ["morning", "night"],
       ["evening", "morning"]
+
     ];
+
 
     return incompatiblePairs.some(
       ([a, b]) =>
+
         (
           beatTemporalStates.includes(a) &&
           locationTemporalStates.includes(b)
-        ) ||
+        )
+
+        ||
+
         (
           beatTemporalStates.includes(b) &&
           locationTemporalStates.includes(a)
@@ -2272,16 +3327,15 @@ function validateBeatSemanticContinuity(blueprint) {
       index + 1;
 
     const beatText =
-      buildBeatText(beat);
+      buildBeatText(
+        beat
+      );
 
     const location =
-      getLocation(beat);
+      getLocation(
+        beat
+      );
 
-    /*
-      IMPORTANT:
-      locationText is declared ONLY ONCE.
-      Do not redeclare it anywhere inside this loop.
-    */
     const locationText =
       getLocationEnvironment(
         location
@@ -2289,7 +3343,7 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
     /* -----------------------------------------------------
-       A. LOCATION MUST EXIST
+       A. LOCATION
     ----------------------------------------------------- */
 
     if (
@@ -2304,7 +3358,7 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
     /* -----------------------------------------------------
-       B. TRAVEL + FIXED LOCATION MISMATCH
+       B. TRAVEL + FIXED LOCATION
     ----------------------------------------------------- */
 
     const travelScore =
@@ -2325,6 +3379,7 @@ function validateBeatSemanticContinuity(blueprint) {
         destinationTerms
       );
 
+
     if (
       travelScore >= 2 &&
       fixedLocationScore >= 1 &&
@@ -2337,10 +3392,12 @@ function validateBeatSemanticContinuity(blueprint) {
           : null;
 
       const previousLocation =
-        previousBeat?.location || "";
+        previousBeat?.location ||
+        "";
 
       const currentLocation =
-        beat?.location || "";
+        beat?.location ||
+        "";
 
       const sameLocation =
         normalizeSemanticText(
@@ -2349,6 +3406,7 @@ function validateBeatSemanticContinuity(blueprint) {
         normalizeSemanticText(
           currentLocation
         );
+
 
       if (sameLocation) {
 
@@ -2360,11 +3418,13 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
     /* -----------------------------------------------------
-       C. ACTION MUST MATCH LOCATION
+       C. ACTION / LOCATION
     ----------------------------------------------------- */
 
     const environmentTravelConflict =
+
       (
+
         containsAny(
           beatText,
           [
@@ -2384,13 +3444,20 @@ function validateBeatSemanticContinuity(blueprint) {
             "flying across"
           ]
         )
-      ) &&
+
+      )
+
+      &&
+
       (
+
         containsAny(
           locationText,
           fixedLocationTerms
         )
+
       );
+
 
     if (
       environmentTravelConflict
@@ -2403,7 +3470,7 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
     /* -----------------------------------------------------
-       D. NAMED WORLD LOCATION IN ACTION
+       D. NAMED WORLD LOCATION
     ----------------------------------------------------- */
 
     for (
@@ -2413,12 +3480,15 @@ function validateBeatSemanticContinuity(blueprint) {
 
       const worldName =
         String(
-          worldLocation?.name || ""
+          worldLocation?.name ||
+          ""
         ).trim();
+
 
       if (!worldName) {
         continue;
       }
+
 
       const normalizedWorldName =
         normalizeSemanticText(
@@ -2430,7 +3500,9 @@ function validateBeatSemanticContinuity(blueprint) {
           beat?.location
         );
 
+
       if (
+
         normalizedWorldName &&
         normalizedWorldName.length >= 5 &&
         normalizedBeatLocation !==
@@ -2438,19 +3510,27 @@ function validateBeatSemanticContinuity(blueprint) {
         beatText.includes(
           normalizedWorldName
         )
+
       ) {
 
         const explicitTravel =
+
           containsAny(
             beatText,
             travelTerms
-          ) ||
+          )
+
+          ||
+
           containsAny(
             beat?.transition_to_next,
             travelTerms
           );
 
-        if (!explicitTravel) {
+
+        if (
+          !explicitTravel
+        ) {
 
           errors.push(
             `Beat ${beatNumber} mentions world location "${worldName}" in its action while the beat location is "${beat.location}" without an explicit transition.`
@@ -2461,32 +3541,24 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
     /* -----------------------------------------------------
-       E. TEMPORAL + LIGHTING CONSISTENCY
-       
-       IMPORTANT:
-       Temporal mismatch is WARNING ONLY.
-       The location's world-bible lighting is treated
-       as the default environmental state, not an
-       immutable lock for every cinematic beat.
-
-       This prevents false failures during:
-       - travel
-       - dawn transitions
-       - sunset transitions
-       - supernatural travel
-       - fast geographic movement
-       - cinematic transition shots
+       E. TEMPORAL / LIGHTING
     ----------------------------------------------------- */
 
     const actionText =
-      normalizeSemanticText([
-        beat?.story_action || "",
-        beat?.character_action || "",
-        beat?.visual_priority || "",
-        beat?.transition_to_next || ""
-      ].join(" "));
+      normalizeSemanticText(
+
+        [
+          beat?.story_action || "",
+          beat?.character_action || "",
+          beat?.visual_priority || "",
+          beat?.transition_to_next || ""
+        ].join(" ")
+
+      );
+
 
     const temporalTransitionTerms = [
+
       "sunrise",
       "sunset",
       "dawn",
@@ -2525,7 +3597,9 @@ function validateBeatSemanticContinuity(blueprint) {
       "moves toward",
       "moves towards",
       "passes over"
+
     ];
+
 
     const hasExplicitTemporalTransition =
       containsAny(
@@ -2533,11 +3607,13 @@ function validateBeatSemanticContinuity(blueprint) {
         temporalTransitionTerms
       );
 
+
     const temporalConflict =
       hasTemporalConflict(
         beat,
         location
       );
+
 
     if (
       temporalConflict &&
@@ -2551,11 +3627,7 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
     /* -----------------------------------------------------
-       F. SUNRISE / NIGHT CHECK
-       
-       WARNING ONLY.
-       This is deliberately NOT an error because a beat
-       can represent a transition from night to dawn.
+       F. SUNRISE / NIGHT
     ----------------------------------------------------- */
 
     const sunriseInBeat =
@@ -2571,6 +3643,7 @@ function validateBeatSemanticContinuity(blueprint) {
         ]
       );
 
+
     const nightInLocation =
       containsAny(
         locationText,
@@ -2582,6 +3655,7 @@ function validateBeatSemanticContinuity(blueprint) {
           "moonlight"
         ]
       );
+
 
     const explicitDawnTransition =
       containsAny(
@@ -2601,6 +3675,7 @@ function validateBeatSemanticContinuity(blueprint) {
           "towards dawn"
         ]
       );
+
 
     if (
       sunriseInBeat &&
@@ -2627,10 +3702,13 @@ function validateBeatSemanticContinuity(blueprint) {
           )
       ).length;
 
+
     const durationSeconds =
       Number(
-        beat?.duration_seconds || 0
+        beat?.duration_seconds ||
+        0
       );
+
 
     if (
       durationSeconds > 0 &&
@@ -2642,6 +3720,7 @@ function validateBeatSemanticContinuity(blueprint) {
         `Beat ${beatNumber} is overloaded: it contains approximately ${actionGroupHits} independent major action groups inside ${durationSeconds} seconds. Split or simplify the beat while preserving the researched causal sequence.`
       );
     }
+
 
     if (
       durationSeconds > 0 &&
@@ -2656,7 +3735,7 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
     /* -----------------------------------------------------
-       H. CHARACTER PHYSICAL PRESENCE
+       H. CHARACTER PRESENCE
     ----------------------------------------------------- */
 
     const listedCharacters =
@@ -2665,6 +3744,7 @@ function validateBeatSemanticContinuity(blueprint) {
       )
         ? beat.characters
         : [];
+
 
     for (
       const character
@@ -2686,15 +3766,22 @@ function validateBeatSemanticContinuity(blueprint) {
 
     const beatActionMentions =
       new Set(
-        [...characterNames].filter(
+
+        [
+          ...characterNames
+        ].filter(
+
           name =>
             beatText.includes(
               normalizeSemanticText(
                 name
               )
             )
+
         )
+
       );
+
 
     for (
       const mentionedCharacter
@@ -2706,27 +3793,37 @@ function validateBeatSemanticContinuity(blueprint) {
           mentionedCharacter
         );
 
+
       const narrationText =
         normalizeSemanticText(
           beat?.narration
         );
 
+
       const actionOnlyText =
         normalizeSemanticText(
+
           `${beat?.story_action || ""} ${beat?.character_action || ""}`
+
         );
 
+
       const onlyNarration =
+
         narrationText.includes(
           normalizeSemanticText(
             mentionedCharacter
           )
-        ) &&
+        )
+
+        &&
+
         !actionOnlyText.includes(
           normalizeSemanticText(
             mentionedCharacter
           )
         );
+
 
       if (
         !isListed &&
@@ -2741,7 +3838,7 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
     /* -----------------------------------------------------
-       I. ADJACENT LOCATION CONTINUITY
+       I. LOCATION CONTINUITY
     ----------------------------------------------------- */
 
     if (
@@ -2761,6 +3858,7 @@ function validateBeatSemanticContinuity(blueprint) {
           beat?.location
         );
 
+
       if (
         previousLocation &&
         currentLocation &&
@@ -2769,18 +3867,27 @@ function validateBeatSemanticContinuity(blueprint) {
       ) {
 
         const transitionText =
-          normalizeSemanticText([
-            previousBeat?.transition_to_next,
-            beat?.story_action,
-            beat?.character_action,
-            beat?.visual_priority
-          ]
-            .filter(Boolean)
-            .join(" "));
+          normalizeSemanticText(
+
+            [
+              previousBeat?.transition_to_next,
+              beat?.story_action,
+              beat?.character_action,
+              beat?.visual_priority
+            ]
+
+              .filter(Boolean)
+
+              .join(" ")
+
+          );
+
 
         const transitionIsExplicit =
           containsAny(
+
             transitionText,
+
             [
               ...travelTerms,
               "new location",
@@ -2792,7 +3899,9 @@ function validateBeatSemanticContinuity(blueprint) {
               "after arriving",
               "now at"
             ]
+
           );
+
 
         if (
           !transitionIsExplicit
@@ -2816,6 +3925,7 @@ function validateBeatSemanticContinuity(blueprint) {
     ) {
 
       const incompatibleEnvironmentTerms = [
+
         "ocean",
         "sea",
         "desert",
@@ -2830,15 +3940,20 @@ function validateBeatSemanticContinuity(blueprint) {
         "palace",
         "temple",
         "cave"
+
       ];
+
 
       const strongEnvironmentTerms =
         incompatibleEnvironmentTerms.filter(
+
           term =>
             beatText.includes(
               term
             )
+
         );
+
 
       if (
         strongEnvironmentTerms.length > 0
@@ -2851,6 +3966,7 @@ function validateBeatSemanticContinuity(blueprint) {
 
         const currentEnvironment =
           locationText;
+
 
         for (
           const environmentTerm
@@ -2869,6 +3985,7 @@ function validateBeatSemanticContinuity(blueprint) {
                 travelTerms
               );
 
+
             if (
               !hasTravelContext
             ) {
@@ -2883,6 +4000,7 @@ function validateBeatSemanticContinuity(blueprint) {
     }
   }
 
+
   return {
     errors,
     warnings
@@ -2891,7 +4009,7 @@ function validateBeatSemanticContinuity(blueprint) {
 
 
 /* =========================================================
-   9. SEMANTIC VISUAL EVIDENCE
+   10. SEMANTIC VISUAL EVIDENCE
 ========================================================= */
 
 function validateSemanticEvidence(
@@ -2901,62 +4019,83 @@ function validateSemanticEvidence(
 
   const errors = [];
 
-  const allowedClassifications = new Set([
-    "VERIFIED",
-    "INFERRED",
-    "CREATIVE_RECONSTRUCTION",
-    "UNKNOWN"
-  ]);
+  const allowedClassifications =
+    new Set([
+      "VERIFIED",
+      "INFERRED",
+      "CREATIVE_RECONSTRUCTION",
+      "UNKNOWN"
+    ]);
 
-  const evidenceById = new Map();
+
+  const evidenceById =
+    new Map();
+
 
   for (
     const item
     of factLock?.locked_facts || []
   ) {
 
-    if (item?.evidence_id) {
+    if (
+      item?.evidence_id
+    ) {
 
       evidenceById.set(
+
         item.evidence_id,
+
         {
           kind: "LOCKED_FACT",
           text: item.claim || ""
         }
+
       );
     }
   }
+
 
   for (
     const item
     of factLock?.visual_notes || []
   ) {
 
-    if (item?.evidence_id) {
+    if (
+      item?.evidence_id
+    ) {
 
       evidenceById.set(
+
         item.evidence_id,
+
         {
           kind: "VISUAL_NOTE",
           text: item.description || ""
         }
+
       );
     }
   }
+
 
   for (
     const item
     of factLock?.creative_reconstructions || []
   ) {
 
-    if (item?.evidence_id) {
+    if (
+      item?.evidence_id
+    ) {
 
       evidenceById.set(
+
         item.evidence_id,
+
         {
           kind: "CREATIVE_RECONSTRUCTION",
           text: item.description || ""
         }
+
       );
     }
   }
@@ -2981,6 +4120,7 @@ function validateSemanticEvidence(
       return;
     }
 
+
     for (
       const item
       of entity.visual_claims
@@ -2991,10 +4131,12 @@ function validateSemanticEvidence(
           item?.claim || ""
         ).trim();
 
+
       const classification =
         String(
           item?.classification || ""
         ).toUpperCase();
+
 
       const ids =
         Array.isArray(
@@ -3002,6 +4144,7 @@ function validateSemanticEvidence(
         )
           ? item.evidence_ids
           : [];
+
 
       if (!claim) {
 
@@ -3012,6 +4155,7 @@ function validateSemanticEvidence(
 
         continue;
       }
+
 
       if (
         !allowedClassifications.has(
@@ -3029,26 +4173,41 @@ function validateSemanticEvidence(
         continue;
       }
 
+
       if (
-        classification !== "VERIFIED"
+        classification !==
+        "VERIFIED"
       ) {
+
         continue;
       }
+
 
       const linkedRecords =
         ids
           .map(
             id =>
-              evidenceById.get(id)
+              evidenceById.get(
+                id
+              )
           )
           .filter(Boolean);
 
+
       const directEvidence =
         linkedRecords.filter(
+
           record =>
-            record.kind === "LOCKED_FACT" ||
-            record.kind === "VISUAL_NOTE"
+            record.kind ===
+              "LOCKED_FACT"
+
+            ||
+
+            record.kind ===
+              "VISUAL_NOTE"
+
         );
+
 
       if (
         directEvidence.length === 0
@@ -3062,32 +4221,45 @@ function validateSemanticEvidence(
         continue;
       }
 
+
       const claimTerms =
         extractSemanticEvidenceTerms(
           claim
         );
 
+
       const evidenceTerms =
         new Set(
+
           directEvidence.flatMap(
+
             record =>
               extractSemanticEvidenceTerms(
                 record.text
               )
+
           )
+
         );
+
 
       const matchedTerms =
         claimTerms.filter(
+
           term =>
-            evidenceTerms.has(term)
+            evidenceTerms.has(
+              term
+            )
+
         );
+
 
       const coverage =
         claimTerms.length === 0
           ? 0
           : matchedTerms.length /
             claimTerms.length;
+
 
       if (
         coverage < 0.75
@@ -3114,10 +4286,12 @@ function validateSemanticEvidence(
         "(unnamed)"
       );
 
+
     inspectClaims(
       character || {},
       label
     );
+
 
     if (
       String(
@@ -3132,6 +4306,7 @@ function validateSemanticEvidence(
       );
     }
 
+
     if (
       character?.visual_design_status ===
       "VERIFIED"
@@ -3143,6 +4318,7 @@ function validateSemanticEvidence(
         )
           ? character.visual_claims
           : [];
+
 
       if (
         claims.length === 0 ||
@@ -3168,21 +4344,25 @@ function validateSemanticEvidence(
   ) {
 
     inspectClaims(
+
       location || {},
+
       "Location " +
       JSON.stringify(
         location?.name ||
         "(unnamed)"
       )
+
     );
   }
+
 
   return errors;
 }
 
 
 /* =========================================================
-   10. BEAT CHARACTER COVERAGE
+   11. BEAT CHARACTER COVERAGE
 ========================================================= */
 
 function validateBeatCharacterCoverage(
@@ -3193,19 +4373,28 @@ function validateBeatCharacterCoverage(
 
   const characterNames =
     new Set(
-      (blueprint.character_bible || [])
+
+      (
+        blueprint.character_bible ||
+        []
+      )
+
         .map(
           item =>
             String(
               item?.name || ""
             ).trim()
         )
+
         .filter(Boolean)
+
     );
+
 
   const beats =
     blueprint.story_blueprint?.beats ||
     [];
+
 
   for (
     const beat
@@ -3219,13 +4408,16 @@ function validateBeatCharacterCoverage(
         ? beat.characters
         : [];
 
+
     for (
       const name
       of listedCharacters
     ) {
 
       if (
-        !characterNames.has(name)
+        !characterNames.has(
+          name
+        )
       ) {
 
         errors.push(
@@ -3233,6 +4425,7 @@ function validateBeatCharacterCoverage(
         );
       }
     }
+
 
     if (
       listedCharacters.length === 0
@@ -3244,12 +4437,13 @@ function validateBeatCharacterCoverage(
     }
   }
 
+
   return errors;
 }
 
 
 /* =========================================================
-   11. IMPORTANT TERM EXTRACTION
+   12. IMPORTANT TERM EXTRACTION
 ========================================================= */
 
 function extractImportantTerms(
@@ -3290,25 +4484,40 @@ function extractImportantTerms(
     "identified",
     "according",
     "described"
+
   ]);
 
+
   return text
+
     .replace(
       /[^a-z0-9\s-]/g,
       " "
     )
-    .split(/\s+/)
+
+    .split(
+      /\s+/
+    )
+
     .filter(
+
       word =>
         word.length >= 5 &&
-        !stopWords.has(word)
+        !stopWords.has(
+          word
+        )
+
     )
-    .slice(0, 12);
+
+    .slice(
+      0,
+      12
+    );
 }
 
 
 /* =========================================================
-   12. TIME RANGE PARSER
+   13. TIME RANGE PARSER
 ========================================================= */
 
 function parseTimeRange(
@@ -3316,18 +4525,24 @@ function parseTimeRange(
 ) {
 
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
+
     return null;
   }
 
+
   const cleaned =
     value
+
       .trim()
+
       .replace(
         /[–—−]/g,
         "-"
       )
+
       .replace(
         /\s+/g,
         " "
@@ -3339,6 +4554,7 @@ function parseTimeRange(
       /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/
     );
 
+
   if (match) {
 
     const start =
@@ -3348,6 +4564,7 @@ function parseTimeRange(
     const end =
       Number(match[3]) * 60 +
       Number(match[4]);
+
 
     return {
       start,
@@ -3361,6 +4578,7 @@ function parseTimeRange(
       /(\d+):(\d+)\s*-\s*(\d+):(\d+)/
     );
 
+
   if (match) {
 
     const start =
@@ -3370,6 +4588,7 @@ function parseTimeRange(
     const end =
       Number(match[3]) * 60 +
       Number(match[4]);
+
 
     return {
       start,
@@ -3383,20 +4602,25 @@ function parseTimeRange(
       /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
     );
 
+
   if (match) {
 
     return {
-      start: Number(match[1]),
-      end: Number(match[2])
+      start:
+        Number(match[1]),
+
+      end:
+        Number(match[2])
     };
   }
+
 
   return null;
 }
 
 
 /* =========================================================
-   13. PROGRAMMATIC VALIDATOR
+   14. PROGRAMMATIC VALIDATOR
 ========================================================= */
 
 function validateBlueprint(
@@ -3410,14 +4634,17 @@ function validateBlueprint(
   const errors = [];
   const warnings = [];
 
+
   if (
     !blueprint ||
-    typeof blueprint !== "object"
+    typeof blueprint !==
+    "object"
   ) {
 
     errors.push(
       "Blueprint is missing or invalid."
     );
+
 
     return {
       passed: false,
@@ -3432,6 +4659,7 @@ function validateBlueprint(
   ------------------------------------------------------- */
 
   const requiredRootSections = [
+
     "project",
     "evidence_policy",
     "character_bible",
@@ -3441,7 +4669,9 @@ function validateBlueprint(
     "continuity_system",
     "directing_rules",
     "quality_control"
+
   ];
+
 
   for (
     const section
@@ -3450,8 +4680,10 @@ function validateBlueprint(
 
     if (
       blueprint[section] ===
-      undefined ||
-      blueprint[section] === null
+        undefined ||
+
+      blueprint[section] ===
+        null
     ) {
 
       errors.push(
@@ -3475,6 +4707,7 @@ function validateBlueprint(
     );
   }
 
+
   if (
     blueprint.project?.aspect_ratio !==
     aspectRatio
@@ -3491,7 +4724,9 @@ function validateBlueprint(
   ------------------------------------------------------- */
 
   const lockedFacts =
-    factLock.locked_facts || [];
+    factLock.locked_facts ||
+    [];
+
 
   const allBlueprintText =
     collectAllStrings(
@@ -3508,17 +4743,23 @@ function validateBlueprint(
 
     const claim =
       String(
-        fact.claim || ""
+        fact.claim ||
+        ""
       )
         .trim()
         .toLowerCase();
 
-    if (!claim) continue;
+
+    if (!claim) {
+      continue;
+    }
+
 
     const importantTerms =
       extractImportantTerms(
         claim
       );
+
 
     for (
       const term
@@ -3562,12 +4803,15 @@ function validateBlueprint(
           item =>
             item.evidence_id
         )
+
     ]);
+
 
   const usedEvidenceIds =
     collectEvidenceIds(
       blueprint
     );
+
 
   for (
     const id
@@ -3575,7 +4819,9 @@ function validateBlueprint(
   ) {
 
     if (
-      !validEvidenceIds.has(id)
+      !validEvidenceIds.has(
+        id
+      )
     ) {
 
       errors.push(
@@ -3613,13 +4859,18 @@ function validateBlueprint(
         continue;
       }
 
+
       if (
         character.evidence_ids.length === 0 &&
+
         !String(
-          character.identity_status || ""
+          character.identity_status ||
+          ""
         )
           .toLowerCase()
-          .includes("unknown")
+          .includes(
+            "unknown"
+          )
       ) {
 
         warnings.push(
@@ -3631,6 +4882,17 @@ function validateBlueprint(
 
 
   /* -------------------------------------------------------
+     5A. CHARACTER IDENTITY LOCK
+  ------------------------------------------------------- */
+
+  errors.push(
+    ...validateCharacterIdentityLocks(
+      blueprint
+    )
+  );
+
+
+  /* -------------------------------------------------------
      6. WORLD TRACEABILITY
   ------------------------------------------------------- */
 
@@ -3638,8 +4900,11 @@ function validateBlueprint(
     blueprint.world_bible?.locations ||
     [];
 
+
   if (
-    Array.isArray(locations)
+    Array.isArray(
+      locations
+    )
   ) {
 
     for (
@@ -3658,18 +4923,27 @@ function validateBlueprint(
         );
       }
 
+
       const status =
         String(
           location.evidence_status ||
           ""
         ).toLowerCase();
 
+
       if (
-        status.includes("verified") &&
+
+        status.includes(
+          "verified"
+        )
+
+        &&
+
         (
           !location.evidence_ids ||
           location.evidence_ids.length === 0
         )
+
       ) {
 
         errors.push(
@@ -3685,15 +4959,17 @@ function validateBlueprint(
   ------------------------------------------------------- */
 
   errors.push(
+
     ...validateSemanticEvidence(
       blueprint,
       factLock
     )
+
   );
 
 
   /* -------------------------------------------------------
-     6B. SEMANTIC BEAT VALIDATION — V4.5
+     6B. SEMANTIC BEAT VALIDATION
   ------------------------------------------------------- */
 
   const semanticBeatValidation =
@@ -3701,9 +4977,11 @@ function validateBlueprint(
       blueprint
     );
 
+
   errors.push(
     ...semanticBeatValidation.errors
   );
+
 
   warnings.push(
     ...semanticBeatValidation.warnings
@@ -3718,11 +4996,13 @@ function validateBlueprint(
     blueprint.visual_language ||
     {};
 
+
   const capture =
     String(
       visual.capture_system ||
       ""
     ).toLowerCase();
+
 
   const emulation =
     String(
@@ -3730,41 +5010,56 @@ function validateBlueprint(
       ""
     ).toLowerCase();
 
+
   const digitalCameraTerms = [
+
     "arri alexa",
     "red camera",
     "sony venice",
     "digital cinema",
     "large-format digital"
+
   ];
 
+
   const literalFilmTerms = [
+
     "shot on 35mm film",
     "captured on 35mm film",
     "shot on 65mm film",
     "captured on 65mm film",
     "physical 35mm film stock"
+
   ];
+
 
   const digitalCapture =
     digitalCameraTerms.some(
       term =>
-        capture.includes(term)
+        capture.includes(
+          term
+        )
     );
+
 
   const literalFilm =
     literalFilmTerms.some(
+
       term =>
         capture.includes(term) ||
         emulation.includes(term)
+
     );
 
+
   if (
+
     digitalCapture &&
     literalFilm &&
     !emulation.includes(
       "emulation"
     )
+
   ) {
 
     errors.push(
@@ -3781,6 +5076,7 @@ function validateBlueprint(
     blueprint.story_blueprint?.beats ||
     [];
 
+
   if (
     !Array.isArray(beats) ||
     beats.length === 0
@@ -3794,14 +5090,21 @@ function validateBlueprint(
 
     const totalBeatDuration =
       beats.reduce(
-        (sum, beat) =>
+
+        (
+          sum,
+          beat
+        ) =>
           sum +
           Number(
             beat.duration_seconds ||
             0
           ),
+
         0
+
       );
+
 
     if (
       totalBeatDuration !==
@@ -3813,7 +5116,9 @@ function validateBlueprint(
       );
     }
 
+
     let previousEnd = 0;
+
 
     for (
       const beat
@@ -3825,6 +5130,7 @@ function validateBlueprint(
           beat.time_range
         );
 
+
       if (!range) {
 
         warnings.push(
@@ -3833,6 +5139,7 @@ function validateBlueprint(
 
         continue;
       }
+
 
       if (
         Math.abs(
@@ -3846,9 +5153,11 @@ function validateBlueprint(
         );
       }
 
+
       previousEnd =
         range.end;
     }
+
 
     if (
       Math.abs(
@@ -3872,7 +5181,9 @@ function validateBlueprint(
     blueprint.continuity_system ||
     {};
 
+
   const continuityFields = [
+
     "character_continuity",
     "face_continuity",
     "body_continuity",
@@ -3884,7 +5195,9 @@ function validateBlueprint(
     "geography_continuity",
     "action_state_continuity",
     "physics_continuity"
+
   ];
+
 
   for (
     const field
@@ -3892,10 +5205,15 @@ function validateBlueprint(
   ) {
 
     if (
+
       !Array.isArray(
         continuity[field]
-      ) ||
+      )
+
+      ||
+
       continuity[field].length === 0
+
     ) {
 
       errors.push(
@@ -3913,8 +5231,11 @@ function validateBlueprint(
     blueprint.character_bible ||
     [];
 
+
   if (
-    Array.isArray(characters)
+    Array.isArray(
+      characters
+    )
   ) {
 
     for (
@@ -3923,6 +5244,7 @@ function validateBlueprint(
     ) {
 
       const requiredRealismFields = [
+
         "anatomy",
         "hands_and_fingers",
         "feet_and_toes",
@@ -3930,7 +5252,9 @@ function validateBlueprint(
         "micro_expressions",
         "costume_physics",
         "movement_signature"
+
       ];
+
 
       for (
         const field
@@ -3938,10 +5262,15 @@ function validateBlueprint(
       ) {
 
         if (
-          !character[field] ||
+
+          !character[field]
+
+          ||
+
           String(
             character[field]
           ).trim() === ""
+
         ) {
 
           errors.push(
@@ -3954,13 +5283,73 @@ function validateBlueprint(
 
 
   /* -------------------------------------------------------
+     10A. IDENTITY LOCK COMPLETENESS
+  ------------------------------------------------------- */
+
+  if (
+    Array.isArray(
+      characters
+    )
+  ) {
+
+    for (
+      const character
+      of characters
+    ) {
+
+      const lock =
+        character.character_identity_lock;
+
+
+      if (
+        !lock
+      ) {
+        continue;
+      }
+
+
+      if (
+        normalizeSemanticText(
+          lock.canonical_name
+        ) !==
+        normalizeSemanticText(
+          character.name
+        )
+      ) {
+
+        errors.push(
+          `Character "${character.name}" identity fingerprint mismatch.`
+        );
+      }
+
+
+      if (
+        normalizeSemanticText(
+          lock.apparent_age
+        ) !==
+        normalizeSemanticText(
+          character.apparent_age
+        )
+      ) {
+
+        errors.push(
+          `Character "${character.name}" age fingerprint mismatch.`
+        );
+      }
+    }
+  }
+
+
+  /* -------------------------------------------------------
      11. BEAT CHARACTER COVERAGE
   ------------------------------------------------------- */
 
   errors.push(
+
     ...validateBeatCharacterCoverage(
       blueprint
     )
+
   );
 
 
@@ -3981,7 +5370,7 @@ function validateBlueprint(
 
 
 /* =========================================================
-   14. AUTO CORRECTION
+   15. AUTO CORRECTION
 ========================================================= */
 
 async function autoCorrectBlueprint(
@@ -4010,6 +5399,72 @@ Do not replace locked facts.
 Do not invent new evidence.
 
 =========================================================
+CRITICAL CHARACTER IDENTITY CORRECTION RULE
+=========================================================
+
+CHARACTER IDENTITY IS IMMUTABLE.
+
+Never replace a canonical character with a generic role.
+
+Never convert a named character into:
+
+- generic warrior
+- generic soldier
+- generic commander
+- generic king
+- generic monk
+- generic physician
+- injured soldier
+- injured warrior
+- random historical character
+- random fantasy character
+- unnamed warrior
+- unnamed commander
+- Alexander's commander
+- Alexander-era soldier
+- any similar archetype
+
+A character's role is not their identity.
+
+Preserve the exact canonical character name.
+
+Preserve:
+
+- apparent age
+- face identity
+- facial structure
+- eyes
+- hair/fur
+- skin/body texture
+- body type
+- height/scale
+- body proportions
+- musculature
+- anatomy
+- costume
+- costume colors
+- costume material
+- costume physics
+- accessories
+- signature features
+- movement signature
+
+If a visual detail is unknown, mark it as
+INFERRED, CREATIVE_RECONSTRUCTION or UNKNOWN.
+
+Do not invent an exact age merely to fill the field.
+
+If exact age is unknown, use a qualified age description.
+
+character_identity_lock.canonical_name MUST exactly
+match character.name.
+
+character_identity_lock.apparent_age MUST exactly
+match character.apparent_age.
+
+Every character must contain forbidden_substitutions.
+
+=========================================================
 RESEARCH
 =========================================================
 
@@ -4033,16 +5488,33 @@ ${JSON.stringify(
 AVAILABLE EVIDENCE IDS — CLOSED LIST
 =========================================================
 
-${JSON.stringify([
-  ...(factLock.locked_facts || [])
-    .map(item => item.evidence_id),
+${JSON.stringify(
 
-  ...(factLock.creative_reconstructions || [])
-    .map(item => item.evidence_id),
+  [
+    ...(factLock.locked_facts || [])
+      .map(
+        item =>
+          item.evidence_id
+      ),
 
-  ...(factLock.visual_notes || [])
-    .map(item => item.evidence_id)
-], null, 2)}
+    ...(factLock.creative_reconstructions || [])
+      .map(
+        item =>
+          item.evidence_id
+      ),
+
+    ...(factLock.visual_notes || [])
+      .map(
+        item =>
+          item.evidence_id
+      )
+
+  ],
+
+  null,
+  2
+
+)}
 
 Every evidence_ids entry must be copied from this list.
 
@@ -4129,6 +5601,45 @@ SEMANTIC CORRECTION RULES
     through that environment.
 
 =========================================================
+IDENTITY CORRECTION RULES
+=========================================================
+
+16. Never change character names.
+
+17. Never change character identity type without evidence.
+
+18. Never replace a canonical person with a generic role.
+
+19. Never replace a historical, mythological or fictional
+    named character with an unrelated character.
+
+20. Preserve apparent age.
+
+21. Preserve face identity.
+
+22. Preserve body identity.
+
+23. Preserve costume identity.
+
+24. Preserve accessory identity.
+
+25. Preserve signature features.
+
+26. Preserve movement signature.
+
+27. Every character must have a complete
+    character_identity_lock.
+
+28. The identity lock must match the character's
+    canonical name exactly.
+
+29. The identity lock age must match the character's
+    apparent_age exactly.
+
+30. Forbidden substitutions must explicitly block
+    generic archetype replacement.
+
+=========================================================
 GENERAL CORRECTION RULES
 =========================================================
 
@@ -4157,33 +5668,36 @@ GENERAL CORRECTION RULES
 
 11. Preserve character continuity.
 
-12. Preserve world continuity.
+12. Preserve character identity continuity.
 
-13. Preserve physical realism.
+13. Preserve world continuity.
 
-14. Preserve exact locked names.
+14. Preserve physical realism.
 
-15. Keep identity separate from visual appearance.
+15. Preserve exact locked names.
 
-16. Correct visual_claim classifications.
+16. Keep identity separate from visual appearance.
 
-17. Never treat a verified location name as proof of
+17. Correct visual_claim classifications.
+
+18. Never treat a verified location name as proof of
     its visual details.
 
-18. Keep narration separate from visible characters.
+19. Keep narration separate from visible characters.
 
-19. Every beat must contain explicit characters.
+20. Every beat must contain explicit characters.
 
-20. Every physically acting character must be listed.
+21. Every physically acting character must be listed.
 
-21. Never teleport characters.
+22. Never teleport characters.
 
-22. Never silently change geography.
+23. Never silently change geography.
 
-23. Never claim validation passed.
+24. Never claim validation passed.
 
 Return ONLY the corrected JSON blueprint.
 `;
+
 
   const response =
     await ai.interactions.create({
@@ -4195,10 +5709,17 @@ Return ONLY the corrected JSON blueprint.
         correctionInstruction,
 
       response_format: {
+
         type: "text",
-        mime_type: "application/json",
-        schema: directorSchema
+
+        mime_type:
+          "application/json",
+
+        schema:
+          directorSchema
+
       }
+
     });
 
 
@@ -4228,7 +5749,7 @@ Return ONLY the corrected JSON blueprint.
 
 
 /* =========================================================
-   15. PUBLIC DIRECTOR FUNCTION
+   16. PUBLIC DIRECTOR FUNCTION
 ========================================================= */
 
 export async function createDirectorBlueprint(
@@ -4290,13 +5811,21 @@ export async function createDirectorBlueprint(
 
     blueprint =
       await autoCorrectBlueprint(
+
         blueprint,
+
         validation,
+
         research,
+
         factLock,
+
         duration,
+
         aspectRatio
+
       );
+
 
     autoCorrected =
       true;
@@ -4308,11 +5837,17 @@ export async function createDirectorBlueprint(
 
     validation =
       validateBlueprint(
+
         blueprint,
+
         research,
+
         factLock,
+
         duration,
+
         aspectRatio
+
       );
   }
 
@@ -4330,8 +5865,11 @@ export async function createDirectorBlueprint(
         " | "
       );
 
+
     throw new Error(
+
       `Director Blueprint failed validation after auto-correction: ${errorMessage}`
+
     );
   }
 
@@ -4343,7 +5881,7 @@ export async function createDirectorBlueprint(
   blueprint._longshot_validation = {
 
     validator_version:
-      "V4.5",
+      "V4.6",
 
     passed:
       true,
@@ -4362,6 +5900,7 @@ export async function createDirectorBlueprint(
 
     validated_aspect_ratio:
       aspectRatio
+
   };
 
 
