@@ -1317,13 +1317,14 @@ Return ONLY valid JSON matching the provided schema.
       input:
         instruction,
 
-      response_format: {
-        type: "text",
-        mime_type:
-          "application/json",
-        schema:
-          directorSchema
-      }
+      const response =
+  await ai.interactions.create({
+    model:
+      "gemini-3.5-flash-lite",
+
+    input:
+      instruction
+  });
     });
 
   if (!response?.output_text) {
