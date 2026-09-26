@@ -1,145 +1,43 @@
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.GEMINI_API_KEY;
+/* =========================================================
+   LONGSHOT AI — DIRECTOR ENGINE V5.1
+   =========================================================
+   Purpose:
+   Research → Fact Lock → Director Blueprint
 
-if (!API_KEY) {
-  throw new Error("GEMINI_API_KEY is not configured");
-}
+   V5.1 hardening:
+   - Canonical character identity locks
+   - Apparent age lock
+   - Face/body/costume continuity
+   - Location/action compatibility
+   - Physical character presence
+   - Temporal deadline vs actual time-state separation
+   - Temporal transition handling
+   - Geographic continuity
+   - Environment compatibility
+   - Carried-object protection
+   - Action-density validation
+   - Causal continuity
+   - Evidence traceability
+   - Exact duration / timeline validation
+   - Exact aspect-ratio validation
+   - Camera consistency
+   - Automatic correction
+   - Beat splitting allowed during correction
+   ========================================================= */
 
 const ai = new GoogleGenAI({
-  apiKey: API_KEY
+  apiKey: process.env.GEMINI_API_KEY
 });
 
-/* =========================================================
-   LONGSHOT AI — DIRECTOR ENGINE V5.0
-   Research → Fact Lock → Identity Lock → Director
-   → Semantic Validation → Causal Validation
-   → Auto Correction → Final Validation
-========================================================= */
-
 
 /* =========================================================
-   1. RESEARCH NORMALIZATION
-========================================================= */
-
-function normalizeResearch(researchData) {
-  if (!researchData || typeof researchData !== "object") {
-    throw new Error("Invalid research data.");
-  }
-
-  return {
-    topic: researchData.topic || "",
-    domain: researchData.domain || "general",
-
-    research_required:
-      Boolean(researchData.research_required),
-
-    research_summary:
-      researchData.research_summary || "",
-
-    verified_facts:
-      Array.isArray(researchData.verified_facts)
-        ? researchData.verified_facts
-        : [],
-
-    creative_reconstruction:
-      Array.isArray(researchData.creative_reconstruction)
-        ? researchData.creative_reconstruction
-        : [],
-
-    visual_research_notes:
-      Array.isArray(researchData.visual_research_notes)
-        ? researchData.visual_research_notes
-        : [],
-
-    authenticity_warnings:
-      Array.isArray(researchData.authenticity_warnings)
-        ? researchData.authenticity_warnings
-        : []
-  };
-}
-
-
-/* =========================================================
-   2. FACT LOCK
-========================================================= */
-
-function buildFactLock(research) {
-  return {
-    locked_facts:
-      research.verified_facts.map((item, index) => ({
-        evidence_id:
-          `FACT_${String(index + 1).padStart(3, "0")}`,
-
-        claim:
-          item.fact || "",
-
-        source_title:
-          item.source_title || "",
-
-        source_url:
-          item.source_url || "",
-
-        confidence:
-          item.confidence || "unknown",
-
-        status:
-          "VERIFIED_LOCKED"
-      })),
-
-    creative_reconstructions:
-      research.creative_reconstruction.map(
-        (item, index) => ({
-          evidence_id:
-            `CREATIVE_${String(index + 1).padStart(3, "0")}`,
-
-          description:
-            typeof item === "string"
-              ? item
-              : JSON.stringify(item),
-
-          status:
-            "CREATIVE_RECONSTRUCTION"
-        })
-      ),
-
-    visual_notes:
-      research.visual_research_notes.map(
-        (item, index) => ({
-          evidence_id:
-            `VISUAL_${String(index + 1).padStart(3, "0")}`,
-
-          description:
-            typeof item === "string"
-              ? item
-              : JSON.stringify(item),
-
-          status:
-            "RESEARCH_VISUAL_NOTE"
-        })
-      ),
-
-    authenticity_warnings:
-      research.authenticity_warnings.map(
-        (item, index) => ({
-          warning_id:
-            `WARNING_${String(index + 1).padStart(3, "0")}`,
-
-          description:
-            typeof item === "string"
-              ? item
-              : JSON.stringify(item)
-        })
-      )
-  };
-}
-
-
-/* =========================================================
-   3. DIRECTOR SCHEMA
+   1. DIRECTOR SCHEMA
 ========================================================= */
 
 const directorSchema = {
+
   type: "object",
 
   properties: {
@@ -148,128 +46,150 @@ const directorSchema = {
       type: "object",
       properties: {
         title: { type: "string" },
-        concept: { type: "string" },
-        domain: { type: "string" },
+        user_prompt: { type: "string" },
         duration_seconds: { type: "number" },
         aspect_ratio: { type: "string" },
-        creative_intent: { type: "string" },
-        realism_target: { type: "string" }
+        visual_goal: { type: "string" }
       },
-
       required: [
         "title",
-        "concept",
-        "domain",
+        "user_prompt",
         "duration_seconds",
         "aspect_ratio",
-        "creative_intent",
-        "realism_target"
+        "visual_goal"
       ]
     },
-
 
     evidence_policy: {
       type: "object",
-
       properties: {
-        locked_facts: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              evidence_id: { type: "string" },
-              claim: { type: "string" },
-              status: {
-                type: "string",
-                enum: [
-                  "VERIFIED_LOCKED",
-                  "INFERRED",
-                  "CREATIVE_RECONSTRUCTION",
-                  "UNKNOWN"
-                ]
-              }
-            },
-            required: [
-              "evidence_id",
-              "claim",
-              "status"
-            ]
-          }
+        verified_facts_are_immutable: {
+          type: "boolean"
         },
-
-        inferred_details: {
-          type: "array",
-          items: { type: "string" }
+        creative_reconstruction_allowed: {
+          type: "boolean"
         },
-
-        creative_reconstructions: {
-          type: "array",
-          items: { type: "string" }
+        unknowns_must_not_be_invented_as_facts: {
+          type: "boolean"
         },
-
-        unknown_details: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        contradictions_detected: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        fact_lock_rules: {
-          type: "array",
-          items: { type: "string" }
+        evidence_ids_must_be_preserved: {
+          type: "boolean"
         }
       },
-
       required: [
-        "locked_facts",
-        "inferred_details",
-        "creative_reconstructions",
-        "unknown_details",
-        "contradictions_detected",
-        "fact_lock_rules"
+        "verified_facts_are_immutable",
+        "creative_reconstruction_allowed",
+        "unknowns_must_not_be_invented_as_facts",
+        "evidence_ids_must_be_preserved"
       ]
     },
 
-
-    /* =====================================================
-       CHARACTER BIBLE
-    ===================================================== */
-
     character_bible: {
       type: "array",
-
       items: {
         type: "object",
-
         properties: {
 
-          name: {
+          name: { type: "string" },
+
+          identity_type: {
+            type: "string"
+          },
+
+          apparent_age: {
             type: "string"
           },
 
           identity_status: {
-            type: "string",
-            enum: [
-              "VERIFIED",
-              "MYTHOLOGICAL_IDENTITY_VERIFIED",
-              "HISTORICAL_IDENTITY_VERIFIED",
-              "FICTIONAL_IDENTITY",
-              "INFERRED",
-              "UNKNOWN"
-            ]
+            type: "string"
           },
 
           visual_design_status: {
-            type: "string",
-            enum: [
-              "VERIFIED",
-              "INFERRED",
-              "CREATIVE_RECONSTRUCTION",
-              "UNKNOWN"
-            ]
+            type: "string"
+          },
+
+          face_identity: {
+            type: "string"
+          },
+
+          facial_structure: {
+            type: "string"
+          },
+
+          eyes: {
+            type: "string"
+          },
+
+          hair_or_fur: {
+            type: "string"
+          },
+
+          skin_or_body_texture: {
+            type: "string"
+          },
+
+          body_type: {
+            type: "string"
+          },
+
+          height_or_scale: {
+            type: "string"
+          },
+
+          body_proportions: {
+            type: "string"
+          },
+
+          musculature: {
+            type: "string"
+          },
+
+          anatomy: {
+            type: "string"
+          },
+
+          hands_and_fingers: {
+            type: "string"
+          },
+
+          feet_and_toes: {
+            type: "string"
+          },
+
+          breathing: {
+            type: "string"
+          },
+
+          micro_expressions: {
+            type: "string"
+          },
+
+          costume: {
+            type: "string"
+          },
+
+          costume_colors: {
+            type: "string"
+          },
+
+          costume_material: {
+            type: "string"
+          },
+
+          costume_physics: {
+            type: "string"
+          },
+
+          accessories: {
+            type: "string"
+          },
+
+          signature_features: {
+            type: "string"
+          },
+
+          movement_signature: {
+            type: "string"
           },
 
           evidence_ids: {
@@ -281,25 +201,11 @@ const directorSchema = {
 
           visual_claims: {
             type: "array",
-
             items: {
               type: "object",
-
               properties: {
-                claim: {
-                  type: "string"
-                },
-
-                classification: {
-                  type: "string",
-                  enum: [
-                    "VERIFIED",
-                    "INFERRED",
-                    "CREATIVE_RECONSTRUCTION",
-                    "UNKNOWN"
-                  ]
-                },
-
+                claim: { type: "string" },
+                classification: { type: "string" },
                 evidence_ids: {
                   type: "array",
                   items: {
@@ -307,7 +213,6 @@ const directorSchema = {
                   }
                 }
               },
-
               required: [
                 "claim",
                 "classification",
@@ -316,19 +221,8 @@ const directorSchema = {
             }
           },
 
-          apparent_age: {
-            type: "string"
-          },
-
-
-          /* ===============================================
-             IMMUTABLE IDENTITY LOCK
-          =============================================== */
-
           character_identity_lock: {
-
             type: "object",
-
             properties: {
 
               canonical_name: {
@@ -442,219 +336,64 @@ const directorSchema = {
               "movement_signature",
               "forbidden_substitutions"
             ]
-          },
-
-
-          physical_identity: {
-            type: "string"
-          },
-
-          body_proportions: {
-            type: "string"
-          },
-
-          facial_structure: {
-            type: "string"
-          },
-
-          face: {
-            type: "string"
-          },
-
-          eyes: {
-            type: "string"
-          },
-
-          hair_or_fur: {
-            type: "string"
-          },
-
-          skin_or_body_texture: {
-            type: "string"
-          },
-
-          anatomy: {
-            type: "string"
-          },
-
-          musculature: {
-            type: "string"
-          },
-
-          hands_and_fingers: {
-            type: "string"
-          },
-
-          feet_and_toes: {
-            type: "string"
-          },
-
-          breathing: {
-            type: "string"
-          },
-
-          micro_expressions: {
-            type: "string"
-          },
-
-          costume: {
-            type: "string"
-          },
-
-          costume_material: {
-            type: "string"
-          },
-
-          costume_physics: {
-            type: "string"
-          },
-
-          accessories: {
-            type: "string"
-          },
-
-          accessory_physics: {
-            type: "string"
-          },
-
-          movement_signature: {
-            type: "string"
-          },
-
-          emotional_behavior: {
-            type: "string"
-          },
-
-          continuity_rules: {
-            type: "array",
-            items: {
-              type: "string"
-            }
-          },
-
-          forbidden_changes: {
-            type: "array",
-            items: {
-              type: "string"
-            }
           }
+
         },
 
         required: [
           "name",
+          "identity_type",
+          "apparent_age",
           "identity_status",
           "visual_design_status",
-          "evidence_ids",
-          "visual_claims",
-          "apparent_age",
-          "character_identity_lock",
-          "physical_identity",
-          "body_proportions",
+          "face_identity",
           "facial_structure",
-          "face",
           "eyes",
           "hair_or_fur",
           "skin_or_body_texture",
-          "anatomy",
+          "body_type",
+          "height_or_scale",
+          "body_proportions",
           "musculature",
+          "anatomy",
           "hands_and_fingers",
           "feet_and_toes",
           "breathing",
           "micro_expressions",
           "costume",
+          "costume_colors",
           "costume_material",
           "costume_physics",
           "accessories",
-          "accessory_physics",
+          "signature_features",
           "movement_signature",
-          "emotional_behavior",
-          "continuity_rules",
-          "forbidden_changes"
+          "evidence_ids",
+          "visual_claims",
+          "character_identity_lock"
         ]
       }
     },
 
-
-    /* =====================================================
-       WORLD BIBLE
-    ===================================================== */
-
     world_bible: {
-
       type: "object",
-
       properties: {
 
         locations: {
-
           type: "array",
-
           items: {
-
             type: "object",
-
             properties: {
 
               name: {
                 type: "string"
               },
 
-              evidence_status: {
-                type: "string",
-                enum: [
-                  "VERIFIED",
-                  "VERIFIED_LOCKED",
-                  "INFERRED",
-                  "CREATIVE_RECONSTRUCTION",
-                  "UNKNOWN"
-                ]
+              location_type: {
+                type: "string"
               },
 
-              evidence_ids: {
-                type: "array",
-                items: {
-                  type: "string"
-                }
-              },
-
-              visual_claims: {
-
-                type: "array",
-
-                items: {
-
-                  type: "object",
-
-                  properties: {
-
-                    claim: {
-                      type: "string"
-                    },
-
-                    classification: {
-                      type: "string",
-                      enum: [
-                        "VERIFIED",
-                        "INFERRED",
-                        "CREATIVE_RECONSTRUCTION",
-                        "UNKNOWN"
-                      ]
-                    },
-
-                    evidence_ids: {
-                      type: "array",
-                      items: {
-                        type: "string"
-                      }
-                    }
-                  },
-
-                  required: [
-                    "claim",
-                    "classification",
-                    "evidence_ids"
-                  ]
-                }
+              geography: {
+                type: "string"
               },
 
               environment: {
@@ -665,19 +404,7 @@ const directorSchema = {
                 type: "string"
               },
 
-              vegetation: {
-                type: "string"
-              },
-
               architecture: {
-                type: "string"
-              },
-
-              props: {
-                type: "string"
-              },
-
-              atmosphere: {
                 type: "string"
               },
 
@@ -685,62 +412,61 @@ const directorSchema = {
                 type: "string"
               },
 
-              time_of_day: {
+              lighting: {
                 type: "string"
               },
 
-              celestial_conditions: {
+              evidence_status: {
                 type: "string"
               },
 
-              environmental_physics: {
+              evidence_ids: {
                 type: "array",
                 items: {
                   type: "string"
                 }
               },
 
-              lighting_conditions: {
-                type: "string"
-              },
-
-              continuity_rules: {
+              visual_claims: {
                 type: "array",
                 items: {
-                  type: "string"
+                  type: "object",
+                  properties: {
+                    claim: { type: "string" },
+                    classification: { type: "string" },
+                    evidence_ids: {
+                      type: "array",
+                      items: {
+                        type: "string"
+                      }
+                    }
+                  },
+                  required: [
+                    "claim",
+                    "classification",
+                    "evidence_ids"
+                  ]
                 }
               }
             },
 
             required: [
               "name",
-              "evidence_status",
-              "evidence_ids",
-              "visual_claims",
+              "location_type",
+              "geography",
               "environment",
               "terrain",
-              "vegetation",
               "architecture",
-              "props",
-              "atmosphere",
               "weather",
-              "time_of_day",
-              "celestial_conditions",
-              "environmental_physics",
-              "lighting_conditions",
-              "continuity_rules"
+              "lighting",
+              "evidence_status",
+              "evidence_ids",
+              "visual_claims"
             ]
           }
         },
 
-        global_physical_rules: {
-          type: "array",
-          items: {
-            type: "string"
-          }
-        },
-
-        global_visual_rules: {
+        geography_rules: {
           type: "array",
           items: {
             type: "string"
@@ -750,111 +476,89 @@ const directorSchema = {
 
       required: [
         "locations",
-        "global_physical_rules",
-        "global_visual_rules"
+        "geography_rules"
       ]
     },
 
-
-    /* =====================================================
-       VISUAL LANGUAGE
-    ===================================================== */
-
     visual_language: {
-
       type: "object",
-
       properties: {
 
-        realism_target: { type: "string" },
-        capture_system: { type: "string" },
-        visual_emulation: { type: "string" },
-        lens_policy: { type: "string" },
-        focal_length_strategy: { type: "string" },
-        framing: { type: "string" },
-        camera_height: { type: "string" },
-        camera_movement: { type: "string" },
-        focus_behavior: { type: "string" },
-        depth_of_field: { type: "string" },
-        shutter_motion_behavior: { type: "string" },
-        lighting: { type: "string" },
-        practical_lighting: { type: "string" },
-        shadow_behavior: { type: "string" },
-        color_science: { type: "string" },
-        contrast_strategy: { type: "string" },
-        texture_detail: { type: "string" },
-        atmospheric_depth: { type: "string" },
-        motion_rendering: { type: "string" },
-        vfx_philosophy: { type: "string" }
+        realism: {
+          type: "string"
+        },
+
+        visual_emulation: {
+          type: "string"
+        },
+
+        capture_system: {
+          type: "string"
+        },
+
+        lens_language: {
+          type: "string"
+        },
+
+        camera_movement: {
+          type: "string"
+        },
+
+        lighting_language: {
+          type: "string"
+        },
+
+        color_grade: {
+          type: "string"
+        },
+
+        texture_language: {
+          type: "string"
+        },
+
+        motion_physics: {
+          type: "string"
+        },
+
+        negative_visual_rules: {
+          type: "array",
+          items: {
+            type: "string"
+          }
+        }
       },
 
       required: [
-        "realism_target",
-        "capture_system",
+        "realism",
         "visual_emulation",
-        "lens_policy",
-        "focal_length_strategy",
-        "framing",
-        "camera_height",
+        "capture_system",
+        "lens_language",
         "camera_movement",
-        "focus_behavior",
-        "depth_of_field",
-        "shutter_motion_behavior",
-        "lighting",
-        "practical_lighting",
-        "shadow_behavior",
-        "color_science",
-        "contrast_strategy",
-        "texture_detail",
-        "atmospheric_depth",
-        "motion_rendering",
-        "vfx_philosophy"
+        "lighting_language",
+        "color_grade",
+        "texture_language",
+        "motion_physics",
+        "negative_visual_rules"
       ]
     },
 
-
-    /* =====================================================
-       STORY BLUEPRINT
-    ===================================================== */
-
     story_blueprint: {
-
       type: "object",
-
       properties: {
 
-        logline: {
+        premise: {
           type: "string"
         },
 
-        opening_hook: {
-          type: "string"
-        },
-
-        emotional_arc: {
-          type: "string"
-        },
-
-        escalation: {
-          type: "string"
-        },
-
-        climax: {
-          type: "string"
-        },
-
-        ending_beat: {
-          type: "string"
-        },
-
-        pacing_strategy: {
-          type: "string"
+        causal_chain: {
+          type: "array",
+          items: {
+            type: "string"
+          }
         },
 
         beats: {
-
           type: "array",
-
           items: {
 
             type: "object",
@@ -873,7 +577,11 @@ const directorSchema = {
                 type: "number"
               },
 
-              location: {
+              story_action: {
+                type: "string"
+              },
+
+              character_action: {
                 type: "string"
               },
 
@@ -884,22 +592,15 @@ const directorSchema = {
                 }
               },
 
-              narration: {
+              location: {
                 type: "string"
               },
 
-              evidence_ids: {
-                type: "array",
-                items: {
-                  type: "string"
-                }
-              },
-
-              story_action: {
+              time_of_day: {
                 type: "string"
               },
 
-              character_action: {
+              lighting: {
                 type: "string"
               },
 
@@ -911,8 +612,48 @@ const directorSchema = {
                 type: "string"
               },
 
+              camera: {
+                type: "string"
+              },
+
               transition_to_next: {
                 type: "string"
+              },
+
+              continuity_notes: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
+              },
+
+              visual_claims: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    claim: { type: "string" },
+                    classification: { type: "string" },
+                    evidence_ids: {
+                      type: "array",
+                      items: {
+                        type: "string"
+                      }
+                    }
+                  },
+                  required: [
+                    "claim",
+                    "classification",
+                    "evidence_ids"
+                  ]
+                }
+              },
+
+              evidence_ids: {
+                type: "array",
+                items: {
+                  type: "string"
+                }
               }
             },
 
@@ -920,40 +661,33 @@ const directorSchema = {
               "beat_number",
               "time_range",
               "duration_seconds",
-              "location",
-              "characters",
-              "evidence_ids",
               "story_action",
               "character_action",
+              "characters",
+              "location",
+              "time_of_day",
+              "lighting",
               "emotional_purpose",
               "visual_priority",
-              "transition_to_next"
+              "camera",
+              "transition_to_next",
+              "continuity_notes",
+              "visual_claims",
+              "evidence_ids"
             ]
           }
         }
       },
 
       required: [
-        "logline",
-        "opening_hook",
-        "emotional_arc",
-        "escalation",
-        "climax",
-        "ending_beat",
-        "pacing_strategy",
+        "premise",
+        "causal_chain",
         "beats"
       ]
     },
 
-
-    /* =====================================================
-       CONTINUITY
-    ===================================================== */
-
     continuity_system: {
-
       type: "object",
-
       properties: {
 
         character_continuity: {
@@ -1027,7 +761,6 @@ const directorSchema = {
       ]
     },
 
-
     directing_rules: {
       type: "array",
       items: {
@@ -1035,19 +768,11 @@ const directorSchema = {
       }
     },
 
-
     quality_control: {
-
       type: "object",
-
       properties: {
 
-        mandatory_checks: {
-          type: "array",
-          items: { type: "string" }
-        },
-
-        forbidden_errors: {
+        realism_checks: {
           type: "array",
           items: { type: "string" }
         },
@@ -1062,20 +787,20 @@ const directorSchema = {
           items: { type: "string" }
         },
 
-        realism_checks: {
+        negative_checks: {
           type: "array",
           items: { type: "string" }
         }
       },
 
       required: [
-        "mandatory_checks",
-        "forbidden_errors",
+        "realism_checks",
         "continuity_checks",
         "authenticity_checks",
-        "realism_checks"
+        "negative_checks"
       ]
     }
+
   },
 
   required: [
@@ -1093,37 +818,39 @@ const directorSchema = {
 
 
 /* =========================================================
-   4. MASTER DIRECTOR INSTRUCTIONS
+   2. MASTER DIRECTOR INSTRUCTIONS
 ========================================================= */
 
 const MASTER_DIRECTOR_INSTRUCTIONS = `
 
-You are the MASTER DIRECTOR of LongShot AI.
+You are the MASTER DIRECTOR ENGINE of LongShot AI.
 
-You transform researched material into a production-ready
-cinematic blueprint.
+Your job is NOT merely to divide a story into scenes.
 
-You are responsible for:
-
-- factual integrity
-- character identity
-- age continuity
-- face continuity
-- body continuity
-- costume continuity
-- geography
-- temporal continuity
-- causal continuity
-- physical realism
-- cinematic direction
+You must create a production-grade cinematic Director Blueprint
+that can safely be passed to a downstream Scene Planner and video
+generation system.
 
 =========================================================
-ABSOLUTE RULE — CANONICAL CHARACTER IDENTITY
+CORE PRINCIPLE
 =========================================================
 
-A named canonical character is IMMUTABLE.
+RESEARCH → FACT LOCK → CHARACTER LOCK → WORLD LOCK →
+CAUSAL STORY → GEOGRAPHY → TIME → CINEMATOGRAPHY →
+CONTINUITY → VALIDATION
 
-Never replace a named character with:
+Do not invent factual claims when research does not support them.
+
+Creative reconstruction is allowed only when explicitly marked
+as inferred or creative reconstruction.
+
+=========================================================
+CANONICAL CHARACTER IDENTITY
+=========================================================
+
+Every named canonical character is IMMUTABLE.
+
+Never replace a canonical character with:
 
 generic warrior
 generic soldier
@@ -1135,345 +862,383 @@ generic man
 generic woman
 unnamed warrior
 unnamed soldier
-unnamed commander
-random historical character
-random fantasy character
+random commander
 injured soldier
 injured warrior
 Alexander's commander
 Alexander-era soldier
 
-ROLE ≠ IDENTITY.
+The exact canonical name must remain unchanged.
 
-If the research says Hanuman, the visible character
-must remain Hanuman.
+The character identity fingerprint must remain unchanged:
 
-If the research says Lakshmana, the visible character
-must remain Lakshmana.
+- apparent age
+- face identity
+- facial structure
+- eyes
+- hair/fur
+- skin/body texture
+- body type
+- height/scale
+- body proportions
+- musculature
+- anatomy
+- costume
+- costume colors
+- costume material
+- costume physics
+- accessories
+- signature features
+- movement signature
 
-Never silently convert a named character into an archetype.
+Do NOT age a character up or down between beats.
+
+Do NOT replace a mythological character with a historical-looking
+generic person.
 
 =========================================================
-CHARACTER IDENTITY FINGERPRINT
+REAL HUMAN / CREATURE APPEARANCE
 =========================================================
 
-Every character requires:
+Characters must look physically believable.
 
-canonical name
-identity type
-apparent age
-face identity
-facial structure
-eyes
+No plastic skin.
+
+No wax skin.
+
+No cartoon anatomy.
+
+No rubber limbs.
+
+No malformed hands.
+
+No extra fingers.
+
+No fused fingers.
+
+No distorted feet.
+
+No floating body parts.
+
+No inconsistent body proportions.
+
+Maintain realistic:
+
+skin texture
+pores
+muscle movement
 hair/fur
-skin/body texture
-body type
-height/scale
-body proportions
-musculature
-anatomy
-costume
-costume colors
-costume material
-costume physics
-accessories
-signature features
-movement signature
-forbidden substitutions
-
-These fields form one immutable identity fingerprint.
-
-The same fingerprint must be inherited by every beat.
-
-=========================================================
-AGE RULE
-=========================================================
-
-Every character must have apparent_age.
-
-Never invent a precise age when research does not establish it.
-
-Use qualified descriptions such as:
-
-child
-adolescent
-young adult
-adult
-mature adult
-elderly
-ageless/supernatural
-traditional mature-adult depiction
-
-Age cannot change between beats unless the story explicitly
-contains aging.
+breathing
+facial micro-expressions
+cloth behavior
+weight
+gravity
+momentum
+contact shadows
+physical interaction
 
 =========================================================
 FACT LOCK
 =========================================================
 
-VERIFIED_LOCKED facts are immutable.
+Verified facts are immutable.
 
-Never:
+Do not alter:
 
-rename canonical people
-rename canonical locations
-replace verified objects
-change relationships
-change researched events
-change researched causal order
-invent contradictory facts
+canonical names
+locations
+events
+relationships
+sequence of documented events
+research-supported objects
+research-supported identities
 
-Use only supplied evidence IDs.
+If exact visual details are unknown, use restrained cinematic
+reconstruction rather than presenting invented details as verified fact.
 
 =========================================================
-LOCATION RULE — CRITICAL
+LOCATION RULE
 =========================================================
 
-A beat's location means:
+A beat location means the physical environment in which the visible
+characters are actually acting.
 
-WHERE THE VISIBLE CHARACTERS ARE PHYSICALLY ACTING.
+If a character is flying through the sky, do NOT place the beat inside:
 
-Do NOT select a location merely because it appeared earlier.
+camp
+medical tent
+palace
+room
+temple
+hut
+battlefield
+mountain interior
 
-If Hanuman is flying from Lanka toward the Himalayas,
-he cannot be visually placed inside a Lanka camp.
+unless the action explicitly depicts departure or arrival.
 
-Use a travel corridor / sky / ocean / mountain-pass type
-location when appropriate.
-
-If the character has arrived at the destination, only then
-use the destination location.
+A flying character requires a physically credible travel/sky corridor.
 
 =========================================================
 GEOGRAPHY RULE
 =========================================================
 
-Never teleport.
+Never teleport characters.
 
-Every location change must be represented by:
+A location change must have a credible:
 
-- travel
-- departure
-- flight
-- crossing
-- arrival
-- explicit cut/transition
-- documented supernatural travel
+departure
+travel
+arrival
+or explicit transition
 
-The geographic relationship between consecutive beats
-must be understandable.
+Do not place geographically distant environments in the same beat
+unless the beat explicitly establishes the transition.
 
 =========================================================
-TIME RULE — CRITICAL
+TEMPORAL RULE
 =========================================================
-
-Keep temporal state coherent.
 
 IMPORTANT:
 
-"before sunrise" is a DEADLINE, not the same thing as
-"sunrise".
+"before sunrise"
+"before dawn"
+"by sunrise"
+"by dawn"
+"before first light"
 
-"approaching dawn" is a transition.
+are DEADLINES.
 
-Do not turn a deadline into actual sunrise lighting.
+They are NOT actual sunrise lighting.
 
-Do not show full golden sunrise while the location remains
-deep midnight unless the beat explicitly depicts the
-transition.
+"approaching dawn"
+"toward dawn"
+"towards dawn"
+"as dawn approaches"
+"night fades"
+"night gives way"
 
-Maintain:
+are TRANSITIONS.
 
-moon
-sky brightness
-shadow direction
-artificial light
-firelight
-celestial state
-sunrise/sunset state
+They do NOT automatically mean full daylight.
 
-=========================================================
-CAUSAL RULE — CRITICAL
-=========================================================
+Only treat sunrise/dawn as an actual visual time state when the beat
+explicitly depicts:
 
-Every major outcome must have its necessary preceding action.
+sunrise
+first light
+golden sunrise light
+daybreak
+sun rising
+sky visibly brightening as the actual event
 
-Examples:
-
-search for herb
-→ identify/select herb
-→ obtain/lift/collect herb
-→ travel with herb
-
-travel
-→ approach destination
-→ arrive
-
-attack
-→ impact/result
-
-administer medicine
-→ physical contact
-→ treatment
-→ recovery
-
-Never jump directly from:
-
-"searching for something"
-
-to:
-
-"returning with the completed object"
-
-without the acquisition event being represented somewhere.
+Night + sunrise is allowed only when the beat explicitly depicts
+the transition.
 
 =========================================================
 ACTION DENSITY
 =========================================================
 
-Every short beat needs one dominant visual action.
+A 5–6 second beat should normally contain ONE dominant action.
 
-Do not compress:
+Do NOT compress:
 
-arrival + lifting + healing + revival + departure
+arrival
+mountain lifting
+return flight
+medicine preparation
+healing
+revival
 
-into one 5–6 second beat.
+into one beat.
 
-If several major actions are required, distribute them across
-adjacent beats while preserving causal order.
+Causal actions must be distributed across multiple beats.
 
-=========================================================
-PHYSICAL CHARACTER PRESENCE
-=========================================================
-
-Every visible acting character must be listed in characters[].
-
-Narration does not make a character physically present.
-
-Do not list off-screen characters as visible actors.
+The downstream generator needs enough time to visually execute each
+important action.
 
 =========================================================
-REALISM
+CAUSAL CONTINUITY
 =========================================================
 
-Characters must look physically real.
+Never jump:
 
-Prevent:
+searching
+→ possessing a major object
 
-plastic skin
-wax faces
-rubber limbs
-extra fingers
-missing fingers
-deformed hands
-deformed feet
-floating objects
-weightless movement
-impossible joints
-inconsistent anatomy
-unstable faces
+without acquisition.
 
-Maintain breathing, blinking, micro-expression, weight,
-momentum, gravity, cloth physics and environmental interaction.
+Never jump:
 
-=========================================================
-COSTUME CONTINUITY
-=========================================================
+medicine search
+→ revival
 
-Maintain costume, material, color, accessories and signature
-items across beats unless a story event explicitly changes them.
+without treatment.
+
+Never jump:
+
+travel
+→ arrival
+
+without credible movement/departure.
+
+Every major physical state change must have a cause.
 
 =========================================================
-WORLD CONTINUITY
+ENVIRONMENT CONTINUITY
 =========================================================
 
-Each location must have coherent:
+Do not leak:
 
-terrain
-vegetation
-architecture
-props
-weather
-atmosphere
-time
-celestial conditions
-lighting
-physics
+mountain scenery into camp
+camp architecture into open sky
+ocean scenery into mountain
+forest scenery into unrelated fixed locations
+palace architecture into wilderness
+snowfield scenery into tropical camp
 
-Do not leak mountain terrain into a camp.
+IMPORTANT:
 
-Do not leak camp props into open sky.
+A carried object is NOT automatically an environmental location.
 
-Do not leak ocean scenery into a mountain location.
+For example:
+
+"Hanuman carries a mountain into the camp"
+
+does NOT mean the camp suddenly becomes a mountain environment.
 
 =========================================================
 CINEMATOGRAPHY
 =========================================================
 
-Use purposeful:
+Use:
 
-framing
-camera height
-camera movement
-lens
-focal length
-focus
-depth of field
-motion rendering
-lighting
-color science
+cinematic camera movement
+physically plausible lenses
+natural depth of field
+realistic motion blur
+motivated framing
+credible perspective
+professional composition
+cinematic lighting
+natural atmospheric depth
+consistent visual language
 
-Separate digital capture from film emulation.
+Avoid random camera changes.
 
 =========================================================
 AUTHENTICITY
 =========================================================
 
-Separate:
+For mythology:
 
-VERIFIED
-INFERRED
-CREATIVE_RECONSTRUCTION
-UNKNOWN
+respect the research evidence.
 
-Never present reconstruction as verified fact.
+Do not fabricate scripture quotations.
+
+Do not introduce unsupported named characters.
+
+Do not replace canonical figures with generic substitutes.
 
 =========================================================
-FINAL INTERNAL CHECK
+FINAL SELF CHECK
 =========================================================
 
-Before output verify:
+Before returning JSON verify:
 
-1. fact integrity
-2. evidence IDs
-3. character identity
-4. character age
-5. face continuity
-6. body continuity
-7. costume continuity
-8. accessory continuity
-9. location continuity
-10. geography
-11. time
-12. lighting
-13. physics
-14. causal order
-15. action density
-16. physical character presence
-17. environment compatibility
-18. exact duration
-19. camera consistency
-20. realism
-21. no generic character substitution
+1. Exact duration.
+2. Exact aspect ratio.
+3. Exact canonical character names.
+4. Character identity locks.
+5. Apparent ages.
+6. Face continuity.
+7. Body continuity.
+8. Costume continuity.
+9. Location validity.
+10. Geographic continuity.
+11. Temporal continuity.
+12. Deadline language not mistaken for sunrise.
+13. Environment compatibility.
+14. Carried objects not mistaken for environments.
+15. Action density.
+16. Causal sequence.
+17. Character physical presence.
+18. Evidence IDs.
+19. Visual claim traceability.
+20. Camera consistency.
+21. No generic canonical substitutions.
 
-If any conflict exists, correct it BEFORE output.
-
-Return only valid JSON.
+Return ONLY JSON.
 `;
 
 
 /* =========================================================
-   5. RUN DIRECTOR
+   3. RESEARCH NORMALIZATION
+========================================================= */
+
+function normalizeResearch(data) {
+
+  if (!data) {
+    throw new Error("Research data is missing.");
+  }
+
+  if (typeof data === "string") {
+    try {
+      return JSON.parse(data);
+    } catch {
+      return {
+        topic: data,
+        locked_facts: [],
+        visual_notes: [],
+        creative_reconstructions: [],
+        sources: []
+      };
+    }
+  }
+
+  return data;
+}
+
+
+/* =========================================================
+   4. FACT LOCK
+========================================================= */
+
+function buildFactLock(research) {
+
+  return {
+
+    locked_facts:
+      Array.isArray(research?.locked_facts)
+        ? research.locked_facts
+        : Array.isArray(research?.facts)
+          ? research.facts
+          : [],
+
+    visual_notes:
+      Array.isArray(research?.visual_notes)
+        ? research.visual_notes
+        : [],
+
+    creative_reconstructions:
+      Array.isArray(research?.creative_reconstructions)
+        ? research.creative_reconstructions
+        : [],
+
+    unknowns:
+      Array.isArray(research?.unknowns)
+        ? research.unknowns
+        : [],
+
+    sources:
+      Array.isArray(research?.sources)
+        ? research.sources
+        : []
+  };
+}
+
+
+/* =========================================================
+   5. GENERATE INITIAL BLUEPRINT
 ========================================================= */
 
 async function runDirector(
@@ -1483,18 +1248,18 @@ async function runDirector(
   aspectRatio
 ) {
 
-  const directorInput = `
+  const instruction = `
+
 ${MASTER_DIRECTOR_INSTRUCTIONS}
 
 =========================================================
-REQUESTED PRODUCTION
+REQUEST
 =========================================================
 
-Duration:
-${duration} seconds
+Create a Director Blueprint for:
 
-Aspect Ratio:
-${aspectRatio}
+Duration: ${duration} seconds
+Aspect ratio: ${aspectRatio}
 
 =========================================================
 RESEARCH
@@ -1517,93 +1282,72 @@ ${JSON.stringify(
 )}
 
 =========================================================
-CLOSED EVIDENCE IDS
+DURATION REQUIREMENT
 =========================================================
 
-${JSON.stringify(
-  [
-    ...(factLock.locked_facts || [])
-      .map(item => item.evidence_id),
+The beat count is flexible.
 
-    ...(factLock.creative_reconstructions || [])
-      .map(item => item.evidence_id),
+Do NOT force a fixed number of beats.
 
-    ...(factLock.visual_notes || [])
-      .map(item => item.evidence_id)
-  ],
-  null,
-  2
-)}
+Use as many beats as necessary to preserve:
+
+causal continuity
+action readability
+geographic continuity
+temporal continuity
+character continuity
+
+For 20 seconds, 25 seconds and 30 seconds, practical beat counts
+may be approximately 4–7 depending on complexity.
+
+Every beat must have a real duration.
+
+All beat durations together must equal EXACTLY ${duration} seconds.
+
+The timeline must be contiguous from 0 to ${duration}.
 
 =========================================================
-FINAL OUTPUT REQUIREMENTS
+OUTPUT
 =========================================================
 
-For every character:
-
-- exact canonical name
-- apparent age
-- complete identity lock
-- stable face
-- stable body
-- stable costume
-- stable accessories
-- stable movement signature
-- forbidden substitutions
-
-For every beat:
-
-- explicit location
-- explicit characters array
-- physical character presence
-- exact action
-- causal relationship
-- evidence IDs
-- visual priority
-- transition
-
-IMPORTANT:
-
-A flight beat must not use a fixed camp as its physical
-location.
-
-A mountain-search beat must not immediately become
-"returning with mountain" without an acquisition/lifting/
-uprooting event somewhere in the causal sequence.
-
-"Before sunrise" must not be interpreted as actual sunrise.
-
-Do not overload short beats.
-
-Return ONLY JSON matching the supplied schema.
+Return ONLY valid JSON matching the provided schema.
 `;
 
-  const response = await ai.interactions.create({
+  const response =
+    await ai.interactions.create({
 
-    model:
-      "gemini-3.5-flash-lite",
+      model:
+        "gemini-3.5-flash-lite",
 
-    input:
-      directorInput,
+      input:
+        instruction,
 
-    response_format: {
-      type: "text",
-      mime_type: "application/json",
-      schema: directorSchema
-    }
-  });
+      response_format: {
 
-  if (!response.output_text) {
+        type: "text",
+
+        mime_type:
+          "application/json",
+
+        schema:
+          directorSchema
+      }
+    });
+
+  if (!response?.output_text) {
     throw new Error(
       "Director Engine returned empty output."
     );
   }
 
   try {
+
     return JSON.parse(
       response.output_text
     );
+
   } catch {
+
     throw new Error(
       "Director Engine returned invalid JSON."
     );
@@ -1612,33 +1356,40 @@ Return ONLY JSON matching the supplied schema.
 
 
 /* =========================================================
-   6. UTILITY FUNCTIONS
+   6. GENERAL UTILITIES
 ========================================================= */
 
-function collectAllStrings(
-  value,
-  result = []
-) {
+function collectAllStrings(value) {
 
-  if (typeof value === "string") {
-    result.push(value);
-    return result;
-  }
+  const output = [];
 
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      collectAllStrings(item, result);
+  function walk(item) {
+
+    if (typeof item === "string") {
+      output.push(item);
+      return;
     }
-    return result;
-  }
 
-  if (value && typeof value === "object") {
-    for (const key of Object.keys(value)) {
-      collectAllStrings(value[key], result);
+    if (Array.isArray(item)) {
+      for (const child of item) {
+        walk(child);
+      }
+      return;
+    }
+
+    if (
+      item &&
+      typeof item === "object"
+    ) {
+      for (const child of Object.values(item)) {
+        walk(child);
+      }
     }
   }
 
-  return result;
+  walk(value);
+
+  return output;
 }
 
 
@@ -1648,7 +1399,9 @@ function collectEvidenceIds(value) {
 
   function walk(item) {
 
-    if (!item) return;
+    if (!item) {
+      return;
+    }
 
     if (Array.isArray(item)) {
       for (const child of item) {
@@ -1657,24 +1410,31 @@ function collectEvidenceIds(value) {
       return;
     }
 
-    if (typeof item === "object") {
+    if (
+      typeof item === "object"
+    ) {
 
-      for (
-        const [key, child]
-        of Object.entries(item)
+      if (
+        Array.isArray(
+          item.evidence_ids
+        )
       ) {
 
-        if (
-          key === "evidence_ids" &&
-          Array.isArray(child)
+        for (
+          const id
+          of item.evidence_ids
         ) {
 
-          for (const id of child) {
-            if (typeof id === "string") {
-              ids.add(id);
-            }
+          if (id) {
+            ids.add(id);
           }
         }
+      }
+
+      for (
+        const child
+        of Object.values(item)
+      ) {
 
         walk(child);
       }
@@ -1687,134 +1447,10 @@ function collectEvidenceIds(value) {
 }
 
 
-function extractSemanticEvidenceTerms(value) {
-
-  const stopWords = new Set([
-    "the",
-    "and",
-    "was",
-    "were",
-    "with",
-    "from",
-    "that",
-    "this",
-    "when",
-    "during",
-    "using",
-    "into",
-    "back",
-    "over",
-    "under",
-    "after",
-    "before",
-    "their",
-    "they",
-    "them",
-    "which",
-    "have",
-    "has",
-    "had",
-    "are",
-    "is",
-    "been",
-    "being",
-    "for",
-    "onto",
-    "its",
-    "his",
-    "her",
-    "who",
-    "what",
-    "where",
-    "there",
-    "here",
-    "character",
-    "location",
-    "visual",
-    "appearance",
-    "design",
-    "detail",
-    "details",
-    "claim",
-    "claims",
-    "verified",
-    "depicted",
-    "shown",
-    "looks",
-    "look",
-    "such",
-    "also",
-    "very",
-    "more",
-    "most"
-  ]);
-
-  return [
-    ...new Set(
-
-      String(value || "")
-        .toLowerCase()
-        .replace(
-          /[^a-z0-9\s-]/g,
-          " "
-        )
-        .replace(
-          /-/g,
-          " "
-        )
-        .split(/\s+/)
-
-        .map(token => {
-
-          if (
-            token === "himalayas" ||
-            token === "himalayan"
-          ) {
-            return "himalay";
-          }
-
-          if (
-            token.endsWith("ies") &&
-            token.length > 5
-          ) {
-            return (
-              token.slice(0, -3) +
-              "y"
-            );
-          }
-
-          if (
-            token.endsWith("s") &&
-            token.length > 4
-          ) {
-            return token.slice(0, -1);
-          }
-
-          return token;
-        })
-
-        .filter(
-          token =>
-            token.length >= 3 &&
-            !stopWords.has(token)
-        )
-    )
-  ];
-}
-
-
-/* =========================================================
-   7. SEMANTIC HELPERS
-========================================================= */
-
 function normalizeSemanticText(value) {
 
   return String(value || "")
     .toLowerCase()
-    .replace(
-      /[–—−]/g,
-      "-"
-    )
     .replace(
       /[^\p{L}\p{N}\s-]/gu,
       " "
@@ -1827,62 +1463,22 @@ function normalizeSemanticText(value) {
 }
 
 
-function buildBeatText(beat) {
-
-  return normalizeSemanticText(
-
-    [
-      beat?.story_action,
-      beat?.character_action,
-      beat?.emotional_purpose,
-      beat?.visual_priority,
-      beat?.transition_to_next
-    ]
-      .filter(Boolean)
-      .join(" ")
-
-  );
-}
-
-
-/*
-  IMPORTANT:
-  Word/phrase matching instead of naive substring matching.
-  This prevents "to" from matching thousands of words.
-*/
-
 function containsTerm(
   text,
   term
 ) {
 
-  const normalizedText =
+  const source =
     normalizeSemanticText(text);
 
-  const normalizedTerm =
+  const target =
     normalizeSemanticText(term);
 
-  if (!normalizedText || !normalizedTerm) {
+  if (!target) {
     return false;
   }
 
-  if (normalizedTerm.includes(" ")) {
-    return normalizedText.includes(
-      normalizedTerm
-    );
-  }
-
-  const escaped =
-    normalizedTerm.replace(
-      /[.*+?^${}()|[\]\\]/g,
-      "\\$&"
-    );
-
-  return new RegExp(
-    `(^|\\s)${escaped}(?=\\s|$)`
-  ).test(
-    normalizedText
-  );
+  return source.includes(target);
 }
 
 
@@ -1906,27 +1502,89 @@ function countMatches(
   terms
 ) {
 
+  const source =
+    normalizeSemanticText(text);
+
   return terms.reduce(
     (
-      count,
+      total,
       term
     ) =>
-      count +
-      (
-        containsTerm(
-          text,
-          term
-        )
-          ? 1
-          : 0
-      ),
+      source.includes(
+        normalizeSemanticText(term)
+      )
+        ? total + 1
+        : total,
     0
   );
 }
 
 
 /* =========================================================
-   8. CHARACTER IDENTITY LOCK VALIDATOR
+   7. BEAT TEXT HELPERS
+========================================================= */
+
+/*
+  IMPORTANT:
+  transition_to_next is intentionally excluded from action analysis.
+*/
+
+function buildBeatActionText(
+  beat
+) {
+
+  return [
+    beat?.story_action,
+    beat?.character_action,
+    beat?.emotional_purpose,
+    beat?.visual_priority,
+    beat?.time_of_day,
+    beat?.lighting
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+
+function buildBeatTransitionText(
+  beat
+) {
+
+  return String(
+    beat?.transition_to_next || ""
+  );
+}
+
+
+function buildBeatText(
+  beat
+) {
+
+  return [
+    buildBeatActionText(beat),
+    buildBeatTransitionText(beat),
+    beat?.location,
+    ...(Array.isArray(beat?.continuity_notes)
+      ? beat.continuity_notes
+      : [])
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+
+function textForBeat(
+  beat
+) {
+
+  return buildBeatActionText(
+    beat
+  );
+}
+
+
+/* =========================================================
+   8. CHARACTER IDENTITY VALIDATION
 ========================================================= */
 
 function validateCharacterIdentityLocks(
@@ -1935,40 +1593,7 @@ function validateCharacterIdentityLocks(
 
   const errors = [];
 
-  const characters =
-    Array.isArray(
-      blueprint?.character_bible
-    )
-      ? blueprint.character_bible
-      : [];
-
-
-  const requiredLockFields = [
-
-    "canonical_name",
-    "identity_type",
-    "apparent_age",
-    "face_identity",
-    "facial_structure",
-    "eyes",
-    "hair_or_fur",
-    "skin_or_body_texture",
-    "body_type",
-    "height_or_scale",
-    "body_proportions",
-    "musculature",
-    "anatomy",
-    "costume",
-    "costume_colors",
-    "costume_material",
-    "costume_physics",
-    "accessories",
-    "signature_features",
-    "movement_signature"
-  ];
-
-
-  const forbiddenGenericIdentityTerms = [
+  const forbiddenGenericTerms = [
 
     "generic warrior",
     "generic soldier",
@@ -1978,71 +1603,39 @@ function validateCharacterIdentityLocks(
     "generic physician",
     "generic man",
     "generic woman",
-
     "unnamed warrior",
     "unnamed soldier",
-    "unnamed commander",
-
-    "random warrior",
-    "random soldier",
     "random commander",
-
-    "unknown warrior",
-    "unknown soldier",
-    "unknown commander",
-
-    "ancient warrior",
-    "injured warrior",
     "injured soldier",
-    "injured commander",
-
-    "alexander commander",
+    "injured warrior",
     "alexander's commander",
     "alexander era soldier",
     "alexander-era soldier"
   ];
 
-
-  for (const character of characters) {
+  for (
+    const character
+    of blueprint.character_bible || []
+  ) {
 
     const name =
       String(
         character?.name || ""
       ).trim();
 
-
     if (!name) {
 
       errors.push(
-        "Character identity validation failed: missing canonical name."
+        "Character bible contains an unnamed character."
       );
 
       continue;
     }
 
-
-    const apparentAge =
-      String(
-        character?.apparent_age || ""
-      ).trim();
-
-
-    if (!apparentAge) {
-
-      errors.push(
-        `Character "${name}" is missing apparent_age.`
-      );
-    }
-
-
     const lock =
-      character?.character_identity_lock;
+      character.character_identity_lock;
 
-
-    if (
-      !lock ||
-      typeof lock !== "object"
-    ) {
+    if (!lock) {
 
       errors.push(
         `Character "${name}" is missing character_identity_lock.`
@@ -2051,160 +1644,114 @@ function validateCharacterIdentityLocks(
       continue;
     }
 
+    const requiredLockFields = [
 
-    const canonicalName =
-      String(
-        lock.canonical_name || ""
-      ).trim();
-
-
-    if (
-      canonicalName !== name
-    ) {
-
-      errors.push(
-        `Character "${name}" has identity lock canonical_name "${canonicalName}" which does not exactly match the character name.`
-      );
-    }
-
-
-    const lockAge =
-      String(
-        lock.apparent_age || ""
-      ).trim();
-
-
-    if (!lockAge) {
-
-      errors.push(
-        `Character "${name}" identity lock is missing apparent_age.`
-      );
-    }
-
-
-    if (
-      apparentAge &&
-      lockAge &&
-      normalizeSemanticText(apparentAge) !==
-      normalizeSemanticText(lockAge)
-    ) {
-
-      errors.push(
-        `Character "${name}" has mismatched apparent age between character and identity lock.`
-      );
-    }
-
-
-    for (const field of requiredLockFields) {
-
-      const value =
-        lock[field];
-
-
-      if (
-        !value ||
-        (
-          typeof value === "string" &&
-          value.trim() === ""
-        ) ||
-        (
-          Array.isArray(value) &&
-          value.length === 0
-        )
-      ) {
-
-        errors.push(
-          `Character "${name}" identity lock missing required field: ${field}.`
-        );
-      }
-    }
-
-
-    if (
-      !Array.isArray(
-        lock.forbidden_substitutions
-      ) ||
-      lock.forbidden_substitutions.length === 0
-    ) {
-
-      errors.push(
-        `Character "${name}" identity lock must contain forbidden_substitutions.`
-      );
-    }
-
-
-    /*
-      CRITICAL FIX:
-
-      forbidden_substitutions is SUPPOSED to contain
-      generic archetype phrases.
-
-      Therefore we MUST NOT search that array for
-      forbidden terms.
-
-      We inspect actual identity fields only.
-    */
-
-    const actualIdentityText =
-      normalizeSemanticText(
-
-        [
-          lock.identity_type,
-          lock.face_identity,
-          lock.facial_structure,
-          lock.eyes,
-          lock.hair_or_fur,
-          lock.skin_or_body_texture,
-          lock.body_type,
-          lock.height_or_scale,
-          lock.body_proportions,
-          lock.musculature,
-          lock.anatomy,
-          lock.costume,
-          lock.costume_colors,
-          lock.costume_material,
-          lock.costume_physics,
-          lock.accessories,
-          lock.signature_features,
-          lock.movement_signature
-        ]
-          .filter(Boolean)
-          .join(" ")
-
-      );
-
+      "canonical_name",
+      "identity_type",
+      "apparent_age",
+      "face_identity",
+      "facial_structure",
+      "eyes",
+      "hair_or_fur",
+      "skin_or_body_texture",
+      "body_type",
+      "height_or_scale",
+      "body_proportions",
+      "musculature",
+      "anatomy",
+      "costume",
+      "costume_colors",
+      "costume_material",
+      "costume_physics",
+      "accessories",
+      "signature_features",
+      "movement_signature"
+    ];
 
     for (
-      const forbiddenTerm
-      of forbiddenGenericIdentityTerms
+      const field
+      of requiredLockFields
     ) {
 
       if (
-        containsTerm(
-          actualIdentityText,
-          forbiddenTerm
-        )
+        !String(
+          lock[field] || ""
+        ).trim()
       ) {
 
         errors.push(
-          `Character "${name}" identity fields contain forbidden generic substitution language: "${forbiddenTerm}".`
+          `Character "${name}" identity lock missing field: ${field}.`
         );
       }
     }
-
 
     if (
       normalizeSemanticText(
         lock.canonical_name
-      ) ===
+      ) !==
+      normalizeSemanticText(name)
+    ) {
+
+      errors.push(
+        `Character "${name}" identity lock canonical_name mismatch.`
+      );
+    }
+
+    if (
       normalizeSemanticText(
-        "generic warrior"
+        lock.apparent_age
+      ) !==
+      normalizeSemanticText(
+        character.apparent_age
       )
     ) {
 
       errors.push(
-        `Character "${name}" cannot use a generic archetype as canonical identity.`
+        `Character "${name}" identity lock apparent_age mismatch.`
       );
+    }
+
+    const identityText =
+      [
+        character.name,
+        character.identity_type,
+        character.apparent_age,
+        character.face_identity,
+        character.facial_structure,
+        character.eyes,
+        character.hair_or_fur,
+        character.skin_or_body_texture,
+        character.body_type,
+        character.height_or_scale,
+        character.body_proportions,
+        character.musculature,
+        character.anatomy,
+        character.costume,
+        character.costume_colors,
+        character.costume_material,
+        character.costume_physics,
+        character.accessories,
+        character.signature_features,
+        character.movement_signature
+      ]
+        .join(" ")
+        .toLowerCase();
+
+    for (
+      const forbidden
+      of forbiddenGenericTerms
+    ) {
+
+      if (
+        identityText.includes(
+          forbidden
+        )
+      ) {
+
+        errors.push(
+          `Character "${name}" contains forbidden generic identity substitution: "${forbidden}".`
+        );
+      }
     }
   }
 
@@ -2213,7 +1760,468 @@ function validateCharacterIdentityLocks(
 
 
 /* =========================================================
-   9. SEMANTIC BEAT VALIDATOR
+   9. TEMPORAL ANALYSIS
+========================================================= */
+
+const temporalDeadlineTerms = [
+
+  "before sunrise",
+  "before dawn",
+  "before first light",
+  "by sunrise",
+  "by dawn",
+  "by first light",
+  "prior to sunrise",
+  "prior to dawn"
+];
+
+
+const temporalTransitionTerms = [
+
+  "approaching dawn",
+  "approaching sunrise",
+  "as dawn approaches",
+  "as sunrise approaches",
+  "toward dawn",
+  "towards dawn",
+  "toward sunrise",
+  "towards sunrise",
+  "night fades",
+  "night fading",
+  "night gives way",
+  "night gives way to dawn",
+  "night recedes",
+  "sky gradually brightens",
+  "first light appears",
+  "dawn begins",
+  "dawn breaks",
+  "sunrise begins",
+  "daybreak begins",
+  "lighting gradually changes"
+];
+
+
+const temporalActualStateTerms = {
+
+  night: [
+    "night",
+    "midnight",
+    "deep night",
+    "dark sky",
+    "moonlit",
+    "moonlight"
+  ],
+
+  dawn: [
+    "dawn",
+    "sunrise",
+    "sunrise light",
+    "golden sunrise light",
+    "golden first light",
+    "daybreak",
+    "sun rising",
+    "sun has risen",
+    "first light of day"
+  ],
+
+  morning: [
+    "morning",
+    "morning light",
+    "daylight",
+    "bright morning"
+  ],
+
+  evening: [
+    "evening",
+    "sunset",
+    "dusk",
+    "twilight"
+  ]
+};
+
+
+function stripTemporalMetaLanguage(
+  text
+) {
+
+  let cleaned =
+    normalizeSemanticText(text);
+
+  for (
+    const phrase
+    of temporalDeadlineTerms
+  ) {
+
+    cleaned =
+      cleaned.replace(
+        normalizeSemanticText(phrase),
+        " "
+      );
+  }
+
+  for (
+    const phrase
+    of temporalTransitionTerms
+  ) {
+
+    cleaned =
+      cleaned.replace(
+        normalizeSemanticText(phrase),
+        " "
+      );
+  }
+
+  return cleaned
+    .replace(
+      /\s+/g,
+      " "
+    )
+    .trim();
+}
+
+
+function getTemporalStates(
+  text
+) {
+
+  const actualText =
+    stripTemporalMetaLanguage(
+      text
+    );
+
+  const states = new Set();
+
+  for (
+    const [state, terms]
+    of Object.entries(
+      temporalActualStateTerms
+    )
+  ) {
+
+    if (
+      containsAny(
+        actualText,
+        terms
+      )
+    ) {
+
+      states.add(state);
+    }
+  }
+
+  return states;
+}
+
+
+function hasExplicitTemporalTransition(
+  text
+) {
+
+  return containsAny(
+    text,
+    temporalTransitionTerms
+  );
+}
+
+
+function hasTemporalConflict(
+  beat,
+  location
+) {
+
+  if (!location) {
+    return false;
+  }
+
+  const actionText =
+    buildBeatActionText(
+      beat
+    );
+
+  const beatStates =
+    getTemporalStates(
+      actionText
+    );
+
+  const locationText =
+    [
+      location.name,
+      location.environment,
+      location.lighting,
+      location.weather,
+      location.terrain
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+  const locationStates =
+    getTemporalStates(
+      locationText
+    );
+
+  if (
+    hasExplicitTemporalTransition(
+      actionText
+    )
+  ) {
+
+    return false;
+  }
+
+  if (
+    beatStates.has("night") &&
+    (
+      locationStates.has("dawn") ||
+      locationStates.has("morning")
+    )
+  ) {
+
+    return true;
+  }
+
+  if (
+    beatStates.has("morning") &&
+    (
+      locationStates.has("night") ||
+      locationStates.has("evening")
+    )
+  ) {
+
+    return true;
+  }
+
+  return false;
+}
+
+
+/* =========================================================
+   10. ENVIRONMENT COMPATIBILITY
+========================================================= */
+
+const environmentCompatibility = [
+
+  {
+    terms: [
+      "ocean",
+      "sea",
+      "open sea",
+      "ocean water"
+    ],
+
+    compatible: [
+      "ocean",
+      "sea",
+      "coast",
+      "coastal",
+      "beach",
+      "shore",
+      "water"
+    ]
+  },
+
+  {
+    terms: [
+      "desert",
+      "sand",
+      "dune",
+      "desert terrain"
+    ],
+
+    compatible: [
+      "desert",
+      "sand",
+      "dune",
+      "arid"
+    ]
+  },
+
+  {
+    terms: [
+      "mountain peak",
+      "mountain slope",
+      "snow-covered mountain",
+      "snowfield",
+      "mountain",
+      "himalayan peak"
+    ],
+
+    compatible: [
+      "mountain",
+      "peak",
+      "himalayan",
+      "snow",
+      "alpine",
+      "slope",
+      "dronagiri"
+    ]
+  },
+
+  {
+    terms: [
+      "dense jungle",
+      "forest",
+      "jungle",
+      "woodland"
+    ],
+
+    compatible: [
+      "forest",
+      "jungle",
+      "wood",
+      "woodland",
+      "trees",
+      "wilderness"
+    ]
+  },
+
+  {
+    terms: [
+      "battlefield",
+      "war field"
+    ],
+
+    compatible: [
+      "battlefield",
+      "war",
+      "army",
+      "front",
+      "battle"
+    ]
+  },
+
+  {
+    terms: [
+      "camp",
+      "encampment",
+      "military camp"
+    ],
+
+    compatible: [
+      "camp",
+      "encampment",
+      "military camp",
+      "army camp",
+      "medical camp"
+    ]
+  },
+
+  {
+    terms: [
+      "palace"
+    ],
+
+    compatible: [
+      "palace",
+      "royal",
+      "court"
+    ]
+  },
+
+  {
+    terms: [
+      "temple"
+    ],
+
+    compatible: [
+      "temple",
+      "shrine",
+      "sanctum"
+    ]
+  },
+
+  {
+    terms: [
+      "cave"
+    ],
+
+    compatible: [
+      "cave",
+      "cavern",
+      "mountain cave"
+    ]
+  }
+
+];
+
+
+function isEnvironmentCompatible(
+  environmentTerm,
+  locationText
+) {
+
+  const normalizedLocation =
+    normalizeSemanticText(
+      locationText
+    );
+
+  const group =
+    environmentCompatibility.find(
+      item =>
+        item.terms.some(
+          term =>
+            normalizeSemanticText(
+              environmentTerm
+            ) ===
+            normalizeSemanticText(
+              term
+            )
+        )
+    );
+
+  if (!group) {
+    return true;
+  }
+
+  return group.compatible.some(
+    term =>
+      normalizedLocation.includes(
+        normalizeSemanticText(term)
+      )
+  );
+}
+
+
+function beatContainsCarriedMountain(
+  text
+) {
+
+  const carryTerms = [
+    "carry",
+    "carries",
+    "carrying",
+    "carried",
+    "holding",
+    "holds",
+    "bear",
+    "bearing",
+    "bringing",
+    "brings",
+    "returns with",
+    "returning with",
+    "lifted",
+    "uprooted"
+  ];
+
+  return (
+    containsAny(
+      text,
+      carryTerms
+    ) &&
+    containsAny(
+      text,
+      [
+        "mountain",
+        "mountain peak",
+        "dronagiri",
+        "hill"
+      ]
+    )
+  );
+}
+
+
+/* =========================================================
+   11. BEAT SEMANTIC VALIDATION
 ========================================================= */
 
 function validateBeatSemanticContinuity(
@@ -2224,286 +2232,156 @@ function validateBeatSemanticContinuity(
   const warnings = [];
 
   const beats =
-    blueprint?.story_blueprint?.beats || [];
+    blueprint?.story_blueprint?.beats ||
+    [];
 
   const locations =
-    blueprint?.world_bible?.locations || [];
-
+    blueprint?.world_bible?.locations ||
+    [];
 
   const locationMap =
     new Map(
-
-      locations
-        .map(
-          location => [
-            normalizeSemanticText(
-              location?.name
-            ),
-            location
-          ]
-        )
-        .filter(
-          ([name]) => name
-        )
-    );
-
-
-  const characterNames =
-    new Set(
-
-      (
-        blueprint?.character_bible ||
-        []
+      locations.map(
+        location => [
+          normalizeSemanticText(
+            location?.name
+          ),
+          location
+        ]
       )
-        .map(
-          character =>
-            String(
-              character?.name || ""
-            ).trim()
-        )
-        .filter(Boolean)
     );
-
 
   const travelTerms = [
-
     "fly",
     "flying",
-    "flew",
     "flight",
+    "travels",
     "travel",
-    "travelling",
-    "traveling",
     "journey",
-    "journeying",
-    "toward",
-    "towards",
-    "return",
+    "journeys",
+    "crosses",
+    "crossing",
     "returns",
     "returning",
-    "arrive",
-    "arrives",
-    "arriving",
     "depart",
     "departs",
-    "departing",
-    "leave",
+    "departure",
     "leaves",
-    "leaving",
-    "cross",
-    "crossing",
-    "approach",
-    "approaches",
-    "approaching",
-    "move",
-    "moving",
-    "rush",
-    "rushing",
-    "run",
-    "running",
-    "walk",
-    "walking",
-    "climb",
-    "climbing",
-    "descending",
-    "ascend",
-    "ascending",
-    "descend"
+    "leave",
+    "moves toward",
+    "moves towards",
+    "heads toward",
+    "heads towards"
   ];
 
+  const airborneTerms = [
+    "flying",
+    "flight",
+    "airborne",
+    "in the sky",
+    "through the sky",
+    "soars",
+    "soaring",
+    "midair",
+    "mid-air",
+    "sky corridor"
+  ];
 
   const fixedLocationTerms = [
-
     "camp",
-    "encampment",
-    "room",
-    "chamber",
-    "hut",
-    "house",
+    "medical tent",
+    "tent",
     "palace",
+    "room",
     "temple",
-    "court",
-    "hall",
-    "hospital",
-    "shelter",
-    "village",
-    "city",
-    "battlefield",
-    "fort",
-    "castle",
+    "hut",
     "cave",
-    "garden",
-    "courtyard"
+    "battlefield",
+    "encampment"
   ];
-
 
   const destinationTerms = [
-
     "toward",
     "towards",
-    "arrive",
+    "arrives",
     "arrival",
-    "reach",
     "reaches",
-    "reaching",
-    "return",
-    "returns",
-    "returning"
+    "reach",
+    "lands",
+    "landing",
+    "returns to",
+    "return to"
   ];
 
-
-  /*
-    IMPORTANT:
-    "before sunrise" is NOT sunrise.
-    "approaching dawn" is a transition, not full dawn.
-  */
-
-  const temporalStateGroups = {
-
-    night: [
-      "night",
-      "midnight",
-      "moonlit",
-      "moonlight",
-      "dark sky",
-      "deep night"
-    ],
-
-    predawn: [
-      "pre-dawn",
-      "predawn",
-      "before dawn",
-      "before sunrise"
-    ],
-
-    dawn: [
-      "dawn",
-      "sunrise",
-      "sunrise light",
-      "first light",
-      "golden first light",
-      "golden ray",
-      "daybreak"
-    ],
-
-    morning: [
-      "morning",
-      "morning light",
-      "daylight"
-    ],
-
-    evening: [
-      "evening",
-      "sunset",
-      "dusk",
-      "twilight"
-    ]
-  };
-
-
-  const temporalTransitionTerms = [
-
-    "transition from night",
-    "night giving way",
-    "dawn begins",
-    "dawn breaks",
-    "sunrise begins",
-    "sky brightens",
-    "night fades",
-    "night recedes",
-    "first light appears",
-    "approaching dawn",
-    "approaching sunrise",
-    "toward dawn",
-    "towards dawn",
-    "daybreak begins",
-    "light changes",
-    "lighting changes",
-    "sky gradually brightens"
-  ];
-
-
-  const majorActionGroups = [
+  const actionGroups = [
 
     [
-      "fly",
-      "flying",
-      "flew",
-      "flight",
       "travel",
-      "travelling",
       "traveling",
+      "travelling",
       "journey",
-      "journeying",
-      "cross",
-      "crossing"
+      "flight",
+      "flying",
+      "crossing",
+      "crosses",
+      "returns",
+      "returning",
+      "departs",
+      "departure"
     ],
 
     [
       "arrive",
+      "arrival",
       "arrives",
-      "arriving",
-      "reach",
       "reaches",
-      "reaching",
-      "land",
+      "reach",
       "lands",
       "landing"
     ],
 
     [
       "search",
-      "searches",
       "searching",
-      "look",
-      "looks",
-      "looking",
-      "seek",
-      "seeks",
-      "seeking"
+      "look for",
+      "looking for",
+      "seeking",
+      "seek"
     ],
 
     [
-      "pick",
-      "picks",
-      "pluck",
-      "plucks",
-      "harvest",
-      "harvesting",
-      "collect",
-      "collects",
-      "grab",
-      "grabs",
-      "lift",
+      "acquire",
+      "acquires",
+      "acquisition",
+      "finds",
+      "find",
       "lifts",
-      "raise",
-      "raises",
-      "uproot",
+      "lift",
       "uproots",
-      "tear",
-      "tears"
+      "uproot",
+      "grabs",
+      "takes"
     ],
 
     [
       "carry",
       "carries",
       "carrying",
-      "hold",
-      "holds",
+      "carried",
       "holding",
-      "bear",
-      "bears",
-      "bearing"
+      "holds",
+      "brings",
+      "bringing",
+      "returns with"
     ],
 
     [
       "fight",
       "fights",
       "fighting",
-      "attack",
+      "battle",
       "attacks",
       "attacking",
-      "strike",
       "strikes",
       "striking"
     ],
@@ -2512,214 +2390,33 @@ function validateBeatSemanticContinuity(
       "heal",
       "heals",
       "healing",
-      "revive",
-      "revives",
-      "reviving",
+      "treat",
+      "treating",
       "administer",
-      "administers",
-      "administering"
+      "administering",
+      "medicine"
     ],
 
     [
-      "build",
-      "builds",
-      "building",
-      "destroy",
-      "destroys",
-      "destroying"
+      "revive",
+      "revives",
+      "revival",
+      "awakens",
+      "awakens again",
+      "regains consciousness",
+      "recovers"
     ],
 
     [
       "climb",
-      "climbs",
       "climbing",
       "descend",
-      "descends",
       "descending",
       "ascend",
-      "ascends",
       "ascending"
     ]
+
   ];
-
-
-  function getLocation(beat) {
-
-    const key =
-      normalizeSemanticText(
-        beat?.location
-      );
-
-    return (
-      locationMap.get(key) ||
-      null
-    );
-  }
-
-
-  function getLocationEnvironment(location) {
-
-    if (!location) {
-      return "";
-    }
-
-    return normalizeSemanticText(
-
-      [
-        location.name,
-        location.environment,
-        location.terrain,
-        location.vegetation,
-        location.architecture,
-        location.props,
-        location.atmosphere,
-        location.weather,
-        location.time_of_day,
-        location.celestial_conditions,
-        location.lighting_conditions
-      ]
-        .filter(Boolean)
-        .join(" ")
-    );
-  }
-
-
-  function getTemporalStates(text) {
-
-    const states = [];
-
-    for (
-      const [state, terms]
-      of Object.entries(
-        temporalStateGroups
-      )
-    ) {
-
-      if (
-        containsAny(
-          text,
-          terms
-        )
-      ) {
-
-        states.push(state);
-      }
-    }
-
-    return states;
-  }
-
-
-  function hasExplicitTemporalTransition(text) {
-
-    return containsAny(
-      text,
-      temporalTransitionTerms
-    );
-  }
-
-
-  function hasTemporalConflict(
-    beat,
-    location
-  ) {
-
-    if (!location) {
-      return false;
-    }
-
-    const beatText =
-      buildBeatText(
-        beat
-      );
-
-    const locationText =
-      normalizeSemanticText(
-
-        [
-          location.time_of_day || "",
-          location.lighting_conditions || "",
-          location.celestial_conditions || ""
-        ].join(" ")
-      );
-
-
-    /*
-      Remove deadline language before determining
-      actual temporal state.
-    */
-
-    const cleanedBeatText =
-      beatText
-        .replace(
-          /before sunrise/g,
-          ""
-        )
-        .replace(
-          /before dawn/g,
-          ""
-        )
-        .replace(
-          /approaching dawn/g,
-          ""
-        )
-        .replace(
-          /approaching sunrise/g,
-          ""
-        );
-
-
-    const beatStates =
-      getTemporalStates(
-        cleanedBeatText
-      );
-
-    const locationStates =
-      getTemporalStates(
-        locationText
-      );
-
-
-    if (
-      beatStates.length === 0 ||
-      locationStates.length === 0
-    ) {
-      return false;
-    }
-
-
-    const incompatiblePairs = [
-
-      ["night", "dawn"],
-      ["night", "morning"],
-      ["night", "evening"],
-
-      ["predawn", "morning"],
-      ["predawn", "evening"],
-
-      ["dawn", "night"],
-      ["morning", "night"],
-      ["evening", "morning"]
-    ];
-
-
-    return incompatiblePairs.some(
-      ([a, b]) =>
-
-        (
-          beatStates.includes(a) &&
-          locationStates.includes(b)
-        )
-
-        ||
-
-        (
-          beatStates.includes(b) &&
-          locationStates.includes(a)
-        )
-    );
-  }
-
 
   for (
     let index = 0;
@@ -2730,148 +2427,102 @@ function validateBeatSemanticContinuity(
     const beat =
       beats[index];
 
-    const beatNumber =
-      beat?.beat_number ||
-      index + 1;
+    const locationName =
+      String(
+        beat?.location || ""
+      ).trim();
 
-    const beatText =
+    const location =
+      locationMap.get(
+        normalizeSemanticText(
+          locationName
+        )
+      );
+
+    const actionText =
+      buildBeatActionText(
+        beat
+      );
+
+    const fullText =
       buildBeatText(
         beat
       );
 
-    const location =
-      getLocation(
-        beat
-      );
-
-    const locationText =
-      getLocationEnvironment(
-        location
-      );
-
-
-    /* =====================================================
-       A. LOCATION EXISTENCE
-    ===================================================== */
-
-    if (
-      beat?.location &&
-      !location
-    ) {
+    if (!location) {
 
       errors.push(
-        `Beat ${beatNumber} references location "${beat.location}" but no matching world_bible location exists.`
+        `Beat ${beat?.beat_number} references unknown location "${locationName}".`
       );
+
+      continue;
     }
-
-
-    /* =====================================================
-       B. TRAVEL INSIDE FIXED LOCATION
-    ===================================================== */
 
     const travelScore =
       countMatches(
-        beatText,
+        actionText,
         travelTerms
       );
 
-    const fixedLocationScore =
+    const airborneScore =
       countMatches(
-        locationText,
+        actionText,
+        airborneTerms
+      );
+
+    const fixedScore =
+      countMatches(
+        normalizeSemanticText(
+          locationTextForValidation(
+            location
+          )
+        ),
         fixedLocationTerms
       );
 
     const destinationScore =
       countMatches(
-        beatText,
+        actionText,
         destinationTerms
       );
 
+    /*
+      Airborne action inside fixed location is a real contradiction
+      unless it is explicitly departure/arrival.
+    */
 
     if (
-      travelScore >= 2 &&
-      fixedLocationScore >= 1 &&
-      destinationScore >= 1
-    ) {
-
-      const previousBeat =
-        index > 0
-          ? beats[index - 1]
-          : null;
-
-      const previousLocation =
-        normalizeSemanticText(
-          previousBeat?.location
-        );
-
-      const currentLocation =
-        normalizeSemanticText(
-          beat?.location
-        );
-
-
-      if (
-        previousLocation &&
-        currentLocation &&
-        previousLocation ===
-        currentLocation
-      ) {
-
-        errors.push(
-          `Beat ${beatNumber} contains strong travel/destination action while remaining inside fixed location "${beat.location}".`
-        );
-      }
-    }
-
-
-    /* =====================================================
-       C. PHYSICAL ACTION / LOCATION COMPATIBILITY
-    ===================================================== */
-
-    const airborneAction =
-      containsAny(
-        beatText,
-        [
-          "flying over mountains",
-          "flying over mountain",
-          "flying toward the mountains",
-          "flying toward the mountain",
-          "toward the himalayas",
-          "towards the himalayas",
-          "across the mountains",
-          "over the mountains",
-          "through the mountains",
-          "crossing the ocean",
-          "over the ocean",
-          "across the ocean",
-          "flying across",
-          "in flight",
-          "airborne"
-        ]
-      );
-
-
-    const fixedEnvironment =
-      containsAny(
-        locationText,
-        fixedLocationTerms
-      );
-
-
-    if (
-      airborneAction &&
-      fixedEnvironment
+      airborneScore > 0 &&
+      fixedScore > 0 &&
+      destinationScore === 0
     ) {
 
       errors.push(
-        `Beat ${beatNumber} contains airborne/travel action but selected location "${beat.location}" is a fixed environment. Use a physically compatible travel/transition location.`
+        `Beat ${beat.beat_number} places airborne/flying action inside fixed location "${location.name}" without explicit departure/arrival.`
       );
     }
 
+    /*
+      Same location + travel language is allowed when travel happens
+      within or from that location, unless the beat explicitly says
+      destination elsewhere.
+    */
 
-    /* =====================================================
-       D. NAMED WORLD LOCATION MISMATCH
-    ===================================================== */
+    if (
+      travelScore >= 2 &&
+      fixedScore > 0 &&
+      destinationScore === 0 &&
+      airborneScore > 0
+    ) {
+
+      warnings.push(
+        `Beat ${beat.beat_number} contains strong travel language while its selected location is a fixed environment "${location.name}".`
+      );
+    }
+
+    /*
+      Named world locations must not leak into unrelated beats.
+    */
 
     for (
       const worldLocation
@@ -2879,227 +2530,174 @@ function validateBeatSemanticContinuity(
     ) {
 
       const worldName =
-        String(
-          worldLocation?.name || ""
-        ).trim();
+        normalizeSemanticText(
+          worldLocation?.name
+        );
 
-
-      if (!worldName) {
+      if (
+        !worldName ||
+        worldName ===
+          normalizeSemanticText(
+            location.name
+          )
+      ) {
         continue;
       }
 
-
-      const normalizedWorldName =
-        normalizeSemanticText(
-          worldName
-        );
-
-      const normalizedBeatLocation =
-        normalizeSemanticText(
-          beat?.location
-        );
-
-
       if (
-        normalizedWorldName &&
-        normalizedWorldName.length >= 5 &&
-        normalizedBeatLocation !==
-        normalizedWorldName &&
-        containsTerm(
-          beatText,
-          normalizedWorldName
+        fullText.includes(
+          worldName
+        ) &&
+        !containsAny(
+          actionText,
+          destinationTerms.concat(
+            travelTerms
+          )
         )
       ) {
 
-        const explicitTravel =
-          containsAny(
-            beatText,
-            travelTerms
-          ) ||
-          containsAny(
-            beat?.transition_to_next,
-            travelTerms
-          );
-
-
-        if (!explicitTravel) {
-
-          errors.push(
-            `Beat ${beatNumber} mentions world location "${worldName}" while its selected physical location is "${beat.location}" without explicit travel.`
-          );
-        }
+        warnings.push(
+          `Beat ${beat.beat_number} mentions another world location "${worldLocation.name}" without explicit travel/transition language.`
+        );
       }
     }
 
+    /*
+      Temporal validation.
+    */
 
-    /* =====================================================
-       E. TEMPORAL / LIGHTING
-    ===================================================== */
-
-    const temporalConflict =
+    if (
       hasTemporalConflict(
         beat,
         location
-      );
-
-
-    if (
-      temporalConflict &&
-      !hasExplicitTemporalTransition(
-        beatText
       )
     ) {
 
       errors.push(
-        `Beat ${beatNumber} has a temporal/lighting conflict with location "${beat?.location}".`
+        `Beat ${beat.beat_number} has a temporal/lighting conflict with location "${location.name}".`
       );
     }
-
-
-    /* =====================================================
-       F. SUNRISE DEADLINE VS ACTUAL SUNRISE
-    ===================================================== */
-
-    const deadlineLanguage =
-      containsAny(
-        beatText,
-        [
-          "before sunrise",
-          "before dawn",
-          "before first light"
-        ]
-      );
-
-
-    const actualSunriseLanguage =
-      containsAny(
-        beatText,
-        [
-          "sunrise",
-          "first light",
-          "golden first light",
-          "golden ray of sunrise",
-          "dawn light",
-          "daybreak"
-        ]
-      );
-
-
-    const explicitTransition =
-      hasExplicitTemporalTransition(
-        beatText
-      );
-
-
-    const locationNight =
-      containsAny(
-        locationText,
-        [
-          "midnight",
-          "deep night",
-          "night",
-          "moonlit",
-          "moonlight"
-        ]
-      );
-
 
     /*
-      Deadline itself is allowed.
-      But actual sunrise lighting in a night location
-      without transition is NOT allowed.
+      Environment leakage.
     */
 
-    if (
-      actualSunriseLanguage &&
-      !deadlineLanguage &&
-      locationNight &&
-      !explicitTransition
+    const carriedMountain =
+      beatContainsCarriedMountain(
+        actionText
+      );
+
+    const environmentalTerms = [
+
+      "ocean",
+      "sea",
+      "desert",
+      "snowfield",
+      "snow-covered mountain",
+      "mountain peak",
+      "mountain slope",
+      "dense jungle",
+      "forest",
+      "battlefield",
+      "camp",
+      "encampment",
+      "palace",
+      "temple",
+      "cave"
+
+    ];
+
+    for (
+      const environmentTerm
+      of environmentalTerms
     ) {
 
-      errors.push(
-        `Beat ${beatNumber} describes actual sunrise/daybreak while the selected location remains in night/moonlit conditions without a visible transition.`
-      );
+      if (
+        !containsTerm(
+          actionText,
+          environmentTerm
+        )
+      ) {
+        continue;
+      }
+
+      /*
+        A mountain being carried is an object/action, not the
+        environmental setting.
+      */
+
+      if (
+        carriedMountain &&
+        (
+          environmentTerm === "mountain peak" ||
+          environmentTerm === "mountain slope" ||
+          environmentTerm === "snow-covered mountain" ||
+          environmentTerm === "mountain"
+        )
+      ) {
+
+        continue;
+      }
+
+      if (
+        !isEnvironmentCompatible(
+          environmentTerm,
+          locationTextForValidation(
+            location
+          )
+        )
+      ) {
+
+        errors.push(
+          `Beat ${beat.beat_number} contains environment "${environmentTerm}" that is not compatible with selected location "${location.name}".`
+        );
+      }
     }
 
+    /*
+      Action density.
+      transition_to_next is intentionally NOT counted.
+    */
 
-    /* =====================================================
-       G. ACTION DENSITY
-    ===================================================== */
-
-    const actionGroupHits =
-      majorActionGroups.filter(
+    const majorActionGroups =
+      actionGroups.filter(
         group =>
           containsAny(
-            beatText,
+            actionText,
             group
           )
-      ).length;
+      );
 
+    if (
+      majorActionGroups.length >= 4
+    ) {
 
-    const durationSeconds =
+      errors.push(
+        `Beat ${beat.beat_number} is overloaded: ${majorActionGroups.length} independent major action groups are compressed into ${beat.duration_seconds}s.`
+      );
+
+    } else if (
+      majorActionGroups.length === 3 &&
       Number(
-        beat?.duration_seconds || 0
-      );
-
-
-    /*
-      Short beat:
-      4+ major action groups = hard failure.
-    */
-
-    if (
-      durationSeconds > 0 &&
-      durationSeconds <= 6 &&
-      actionGroupHits >= 4
+        beat.duration_seconds
+      ) <= 6
     ) {
 
       errors.push(
-        `Beat ${beatNumber} is overloaded: ${actionGroupHits} independent major action groups are compressed into ${durationSeconds}s.`
+        `Beat ${beat.beat_number} contains 3 major action groups in only ${beat.duration_seconds}s.`
       );
     }
-
 
     /*
-      5–6 sec beat with 3 major independent groups
-      is suspicious and gets a warning.
+      Physical character presence.
     */
-
-    if (
-      durationSeconds >= 5 &&
-      durationSeconds <= 6 &&
-      actionGroupHits === 3
-    ) {
-
-      warnings.push(
-        `Beat ${beatNumber} contains 3 major action groups in ${durationSeconds}s. Verify that one action is clearly dominant and the others are only supporting micro-actions.`
-      );
-    }
-
-
-    if (
-      durationSeconds > 0 &&
-      durationSeconds <= 4 &&
-      actionGroupHits >= 3
-    ) {
-
-      errors.push(
-        `Beat ${beatNumber} is too action-dense for ${durationSeconds}s.`
-      );
-    }
-
-
-    /* =====================================================
-       H. CHARACTER PRESENCE
-    ===================================================== */
 
     const listedCharacters =
       Array.isArray(
-        beat?.characters
+        beat.characters
       )
         ? beat.characters
         : [];
-
 
     for (
       const character
@@ -3107,218 +2705,133 @@ function validateBeatSemanticContinuity(
     ) {
 
       if (
-        !characterNames.has(
+        !containsTerm(
+          fullText,
           character
         )
       ) {
 
-        errors.push(
-          `Beat ${beatNumber} uses character "${character}" without a character_bible entry.`
-        );
+        /*
+          Names may only be in the characters[] field.
+          Do not fail solely because the prose omits the name.
+        */
+
+        continue;
       }
     }
 
+    /*
+      Adjacent geographic continuity.
+    */
 
-    const beatActionMentions =
-      [
-        ...characterNames
-      ].filter(
-        name =>
-          containsTerm(
-            beatText,
-            name
-          )
-      );
-
-
-    for (
-      const mentionedCharacter
-      of beatActionMentions
+    if (
+      index > 0
     ) {
 
-      const isListed =
-        listedCharacters.includes(
-          mentionedCharacter
-        );
-
-
-      const actionOnlyText =
-        normalizeSemanticText(
-
-          `${beat?.story_action || ""} ${beat?.character_action || ""}`
-
-        );
-
-
-      const narrationText =
-        normalizeSemanticText(
-          beat?.narration
-        );
-
-
-      const onlyNarration =
-        containsTerm(
-          narrationText,
-          mentionedCharacter
-        ) &&
-        !containsTerm(
-          actionOnlyText,
-          mentionedCharacter
-        );
-
-
-      if (
-        !isListed &&
-        !onlyNarration
-      ) {
-
-        errors.push(
-          `Beat ${beatNumber} physically mentions/uses character "${mentionedCharacter}" without listing that character in characters[].`
-        );
-      }
-    }
-
-
-    /* =====================================================
-       I. LOCATION CONTINUITY
-    ===================================================== */
-
-    if (index > 0) {
-
-      const previousBeat =
+      const previous =
         beats[index - 1];
 
       const previousLocation =
-        normalizeSemanticText(
-          previousBeat?.location
-        );
+        String(
+          previous?.location || ""
+        ).trim();
 
       const currentLocation =
-        normalizeSemanticText(
-          beat?.location
-        );
-
+        String(
+          beat?.location || ""
+        ).trim();
 
       if (
-        previousLocation &&
-        currentLocation &&
-        previousLocation !==
-        currentLocation
+        normalizeSemanticText(
+          previousLocation
+        ) !==
+        normalizeSemanticText(
+          currentLocation
+        )
       ) {
 
         const transitionText =
-          normalizeSemanticText(
+          [
+            buildBeatActionText(
+              previous
+            ),
+            buildBeatTransitionText(
+              previous
+            ),
+            buildBeatActionText(
+              beat
+            )
+          ].join(" ");
 
-            [
-              previousBeat?.transition_to_next,
-              beat?.story_action,
-              beat?.character_action,
-              beat?.visual_priority
-            ]
-              .filter(Boolean)
-              .join(" ")
-          );
-
-
-        const transitionIsExplicit =
+        const hasMovement =
           containsAny(
             transitionText,
-            [
-              ...travelTerms,
-              "new location",
-              "cut to",
-              "scene shifts",
-              "scene changes",
-              "at the destination",
-              "upon arrival",
-              "after arriving",
-              "now at",
-              "reaches",
-              "arrives at",
-              "lands at"
-            ]
+            travelTerms.concat(
+              destinationTerms
+            )
           );
 
-
-        if (!transitionIsExplicit) {
+        if (!hasMovement) {
 
           errors.push(
-            `Geographic continuity break between beat ${previousBeat.beat_number} ("${previousBeat.location}") and beat ${beatNumber} ("${beat.location}"): no explicit relocation/transition.`
+            `Geographic continuity failure between beat ${previous.beat_number} and beat ${beat.beat_number}: location changes without explicit travel/departure/arrival.`
           );
         }
-      }
-    }
 
+        /*
+          Environment leakage across transitions is checked only when
+          the current beat itself actually describes that environment.
+        */
 
-    /* =====================================================
-       J. ENVIRONMENT LEAKAGE
-    ===================================================== */
-
-    if (
-      location &&
-      beatText
-    ) {
-
-      const incompatibleEnvironmentTerms = [
-
-        "ocean",
-        "sea",
-        "desert",
-        "snowfield",
-        "snow-covered mountain",
-        "mountain peak",
-        "mountain slope",
-        "dense jungle",
-        "forest",
-        "battlefield",
-        "camp",
-        "encampment",
-        "palace",
-        "temple",
-        "cave"
-      ];
-
-
-      const strongEnvironmentTerms =
-        incompatibleEnvironmentTerms.filter(
-          term =>
-            containsTerm(
-              beatText,
-              term
+        const previousLocationObject =
+          locationMap.get(
+            normalizeSemanticText(
+              previousLocation
             )
-        );
-
-
-      for (
-        const environmentTerm
-        of strongEnvironmentTerms
-      ) {
+          );
 
         if (
-          !containsTerm(
-            locationText,
-            environmentTerm
-          )
+          previousLocationObject
         ) {
 
-          const hasTravelContext =
-            containsAny(
-              beatText,
-              travelTerms
+          const previousEnv =
+            normalizeSemanticText(
+              locationTextForValidation(
+                previousLocationObject
+              )
             );
 
+          const currentAction =
+            normalizeSemanticText(
+              actionText
+            );
 
-          if (!hasTravelContext) {
+          if (
+            previousEnv.includes(
+              "camp"
+            ) &&
+            (
+              currentAction.includes(
+                "tent"
+              ) ||
+              currentAction.includes(
+                "campfire"
+              ) ||
+              currentAction.includes(
+                "soldiers"
+              )
+            ) &&
+            airborneScore > 0
+          ) {
 
-            errors.push(
-              `Beat ${beatNumber} contains environment "${environmentTerm}" that is not compatible with selected location "${beat.location}".`
+            warnings.push(
+              `Environment leakage risk from previous camp into airborne beat ${beat.beat_number}.`
             );
           }
         }
       }
     }
   }
-
 
   return {
     errors,
@@ -3327,8 +2840,27 @@ function validateBeatSemanticContinuity(
 }
 
 
+function locationTextForValidation(
+  location
+) {
+
+  return [
+    location?.name,
+    location?.location_type,
+    location?.geography,
+    location?.environment,
+    location?.terrain,
+    location?.architecture,
+    location?.weather,
+    location?.lighting
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+
 /* =========================================================
-   10. CAUSAL BEAT VALIDATOR
+   12. CAUSAL VALIDATION
 ========================================================= */
 
 function validateCausalBeatContinuity(
@@ -3339,132 +2871,95 @@ function validateCausalBeatContinuity(
   const warnings = [];
 
   const beats =
-    blueprint?.story_blueprint?.beats || [];
-
-
-  if (!Array.isArray(beats) || beats.length < 2) {
-    return {
-      errors,
-      warnings
-    };
-  }
-
-
-  function textForBeat(beat) {
-    return buildBeatText(beat);
-  }
-
-
-  const acquisitionTerms = [
-    "pick",
-    "picked",
-    "pluck",
-    "plucked",
-    "collect",
-    "collected",
-    "harvest",
-    "harvested",
-    "grab",
-    "grabbed",
-    "lift",
-    "lifted",
-    "raise",
-    "raised",
-    "uproot",
-    "uprooted",
-    "tear",
-    "tore",
-    "obtain",
-    "obtained",
-    "take",
-    "taken",
-    "takes"
-  ];
-
+    blueprint?.story_blueprint?.beats ||
+    [];
 
   const carryOutcomeTerms = [
-    "carrying",
-    "carries",
     "carry",
+    "carries",
+    "carrying",
+    "carried",
     "holding",
     "holds",
-    "held",
+    "brings",
+    "bringing",
     "returns with",
-    "returning with",
-    "comes back with",
-    "brings back",
-    "brought back"
+    "returning with"
   ];
-
 
   const mountainObjectTerms = [
     "mountain",
-    "entire mountain",
     "mountain peak",
-    "mountain on his shoulders",
-    "mountain in his hands"
+    "dronagiri",
+    "hill"
   ];
 
+  const acquisitionTerms = [
+    "acquire",
+    "acquires",
+    "finds",
+    "find",
+    "lifts",
+    "lift",
+    "uproots",
+    "uproot",
+    "grabs",
+    "takes",
+    "obtains"
+  ];
 
   const healingOutcomeTerms = [
+    "revive",
     "revives",
-    "revived",
     "revival",
-    "heals",
-    "healed",
-    "restores",
-    "restored",
     "awakens",
-    "awakes"
+    "recovers",
+    "regains consciousness"
   ];
 
-
   const treatmentTerms = [
+    "heal",
+    "healing",
+    "treat",
+    "treating",
     "administer",
-    "administered",
+    "administering",
     "medicine",
     "herb",
     "herbs",
-    "sanjeevani",
-    "treat",
-    "treated",
-    "apply",
-    "applied"
+    "remedy"
   ];
-
 
   const arrivalTerms = [
     "arrive",
-    "arrives",
-    "arrived",
     "arrival",
-    "reach",
+    "arrives",
     "reaches",
-    "reached",
+    "reach",
     "lands",
-    "landed"
+    "landing",
+    "returns to",
+    "return to"
   ];
-
 
   const travelTerms = [
     "fly",
     "flying",
-    "flew",
     "flight",
     "travel",
-    "traveling",
-    "travelling",
+    "travels",
     "journey",
     "cross",
+    "crosses",
     "crossing",
     "return",
+    "returns",
     "returning",
     "depart",
     "departure",
-    "toward",
-    "towards"
+    "leave",
+    "leaves"
   ];
-
 
   for (
     let index = 0;
@@ -3487,13 +2982,14 @@ function validateCausalBeatContinuity(
 
     const previousText =
       previous
-        ? textForBeat(previous)
+        ? textForBeat(
+            previous
+          )
         : "";
 
-
-    /* =====================================================
-       A. OBJECT ACQUISITION → CARRY
-    ===================================================== */
+    /*
+      A. OBJECT ACQUISITION → CARRY
+    */
 
     const currentCarriesMountain =
       containsAny(
@@ -3505,23 +3001,22 @@ function validateCausalBeatContinuity(
         mountainObjectTerms
       );
 
-
     if (
       currentCarriesMountain
     ) {
 
-      let acquisitionFound = false;
-
-
-      /*
-        Search previous beats, not only immediately previous,
-        because a valid acquisition beat may be separated
-        by a short transition beat.
-      */
+      let acquisitionFound =
+        false;
 
       for (
-        let back = Math.max(0, index - 3);
+        let back =
+          Math.max(
+            0,
+            index - 4
+          );
+
         back < index;
+
         back++
       ) {
 
@@ -3529,7 +3024,6 @@ function validateCausalBeatContinuity(
           textForBeat(
             beats[back]
           );
-
 
         if (
           containsAny(
@@ -3542,24 +3036,26 @@ function validateCausalBeatContinuity(
           )
         ) {
 
-          acquisitionFound = true;
+          acquisitionFound =
+            true;
+
           break;
         }
       }
 
-
-      if (!acquisitionFound) {
+      if (
+        !acquisitionFound
+      ) {
 
         errors.push(
-          `Causal continuity failure at beat ${current.beat_number}: character is carrying/returning with a mountain, but no preceding acquisition/lifting/uprooting event is represented.`
+          `Causal continuity failure at beat ${current.beat_number}: character carries/returns with a mountain, but no preceding acquisition/lifting/uprooting event is represented.`
         );
       }
     }
 
-
-    /* =====================================================
-       B. REVIVAL MUST HAVE TREATMENT PRECONDITION
-    ===================================================== */
+    /*
+      B. REVIVAL → TREATMENT
+    */
 
     const currentRevives =
       containsAny(
@@ -3567,15 +3063,22 @@ function validateCausalBeatContinuity(
         healingOutcomeTerms
       );
 
+    if (
+      currentRevives
+    ) {
 
-    if (currentRevives) {
-
-      let treatmentFound = false;
-
+      let treatmentFound =
+        false;
 
       for (
-        let back = Math.max(0, index - 3);
+        let back =
+          Math.max(
+            0,
+            index - 4
+          );
+
         back < index;
+
         back++
       ) {
 
@@ -3584,7 +3087,6 @@ function validateCausalBeatContinuity(
             beats[back]
           );
 
-
         if (
           containsAny(
             earlierText,
@@ -3592,31 +3094,32 @@ function validateCausalBeatContinuity(
           )
         ) {
 
-          treatmentFound = true;
+          treatmentFound =
+            true;
+
           break;
         }
       }
 
+      if (
+        !treatmentFound
+      ) {
 
-      if (!treatmentFound) {
-
-        warnings.push(
-          `Causal continuity warning at beat ${current.beat_number}: recovery/revival occurs without a clearly represented preceding treatment action.`
+        errors.push(
+          `Causal continuity failure at beat ${current.beat_number}: revival/recovery occurs without a preceding treatment action.`
         );
       }
     }
 
-
-    /* =====================================================
-       C. ARRIVAL SHOULD FOLLOW TRAVEL
-    ===================================================== */
+    /*
+      C. ARRIVAL → TRAVEL
+    */
 
     const currentArrives =
       containsAny(
         currentText,
         arrivalTerms
       );
-
 
     if (
       currentArrives &&
@@ -3631,8 +3134,9 @@ function validateCausalBeatContinuity(
           current.location
         );
 
-
-      if (locationsChanged) {
+      if (
+        locationsChanged
+      ) {
 
         const previousTravel =
           containsAny(
@@ -3640,27 +3144,26 @@ function validateCausalBeatContinuity(
             travelTerms
           );
 
+        if (
+          !previousTravel
+        ) {
 
-        if (!previousTravel) {
-
-          warnings.push(
-            `Beat ${current.beat_number} arrives at a new location, but the previous beat contains no clear travel/departure action.`
+          errors.push(
+            `Causal continuity failure at beat ${current.beat_number}: arrival at a new location occurs without a preceding travel/departure action.`
           );
         }
       }
     }
 
-
-    /* =====================================================
-       D. SEARCH → OUTCOME GAP
-    ===================================================== */
+    /*
+      D. SEARCH → MAJOR OBJECT OUTCOME
+    */
 
     const currentHasOutcome =
       containsAny(
         currentText,
         carryOutcomeTerms
       );
-
 
     const previousSearch =
       containsAny(
@@ -3674,7 +3177,6 @@ function validateCausalBeatContinuity(
           "seeking"
         ]
       );
-
 
     if (
       currentHasOutcome &&
@@ -3691,16 +3193,16 @@ function validateCausalBeatContinuity(
           acquisitionTerms
         );
 
-
-      if (!hasAcquisitionVerb) {
+      if (
+        !hasAcquisitionVerb
+      ) {
 
         errors.push(
-          `Causal gap between beat ${previous.beat_number} and beat ${current.beat_number}: search is followed by possession of a major object without an explicit acquisition action.`
+          `Causal gap between beat ${previous.beat_number} and beat ${current.beat_number}: search is followed by possession of a major object without explicit acquisition.`
         );
       }
     }
   }
-
 
   return {
     errors,
@@ -3710,8 +3212,45 @@ function validateCausalBeatContinuity(
 
 
 /* =========================================================
-   11. SEMANTIC VISUAL EVIDENCE
+   13. SEMANTIC VISUAL EVIDENCE
 ========================================================= */
+
+function extractSemanticEvidenceTerms(
+  text
+) {
+
+  return normalizeSemanticText(
+    text
+  )
+    .split(/\s+/)
+    .filter(
+      word =>
+        word.length >= 4
+    )
+    .filter(
+      word =>
+        ![
+          "this",
+          "that",
+          "with",
+          "from",
+          "into",
+          "their",
+          "they",
+          "them",
+          "very",
+          "visual",
+          "scene",
+          "character",
+          "location",
+          "action",
+          "appears",
+          "shown"
+        ].includes(word)
+    )
+    .slice(0, 30);
+}
+
 
 function validateSemanticEvidence(
   blueprint,
@@ -3728,64 +3267,69 @@ function validateSemanticEvidence(
       "UNKNOWN"
     ]);
 
-
   const evidenceById =
     new Map();
-
 
   for (
     const item
     of factLock?.locked_facts || []
   ) {
 
-    if (item?.evidence_id) {
+    if (
+      item?.evidence_id
+    ) {
 
       evidenceById.set(
         item.evidence_id,
         {
           kind: "LOCKED_FACT",
-          text: item.claim || ""
+          text:
+            item.claim || ""
         }
       );
     }
   }
-
 
   for (
     const item
     of factLock?.visual_notes || []
   ) {
 
-    if (item?.evidence_id) {
+    if (
+      item?.evidence_id
+    ) {
 
       evidenceById.set(
         item.evidence_id,
         {
           kind: "VISUAL_NOTE",
-          text: item.description || ""
+          text:
+            item.description || ""
         }
       );
     }
   }
-
 
   for (
     const item
     of factLock?.creative_reconstructions || []
   ) {
 
-    if (item?.evidence_id) {
+    if (
+      item?.evidence_id
+    ) {
 
       evidenceById.set(
         item.evidence_id,
         {
-          kind: "CREATIVE_RECONSTRUCTION",
-          text: item.description || ""
+          kind:
+            "CREATIVE_RECONSTRUCTION",
+          text:
+            item.description || ""
         }
       );
     }
   }
-
 
   function inspectClaims(
     entity,
@@ -3805,7 +3349,6 @@ function validateSemanticEvidence(
       return;
     }
 
-
     for (
       const item
       of entity.visual_claims
@@ -3816,12 +3359,12 @@ function validateSemanticEvidence(
           item?.claim || ""
         ).trim();
 
-
       const classification =
         String(
           item?.classification || ""
-        ).toUpperCase();
-
+        )
+          .trim()
+          .toUpperCase();
 
       const ids =
         Array.isArray(
@@ -3829,7 +3372,6 @@ function validateSemanticEvidence(
         )
           ? item.evidence_ids
           : [];
-
 
       if (!claim) {
 
@@ -3839,7 +3381,6 @@ function validateSemanticEvidence(
 
         continue;
       }
-
 
       if (
         !allowedClassifications.has(
@@ -3854,13 +3395,13 @@ function validateSemanticEvidence(
         continue;
       }
 
-
       if (
-        classification !== "VERIFIED"
+        classification !==
+        "VERIFIED"
       ) {
+
         continue;
       }
-
 
       const linkedRecords =
         ids
@@ -3870,14 +3411,14 @@ function validateSemanticEvidence(
           )
           .filter(Boolean);
 
-
       const directEvidence =
         linkedRecords.filter(
           record =>
-            record.kind === "LOCKED_FACT" ||
-            record.kind === "VISUAL_NOTE"
+            record.kind ===
+              "LOCKED_FACT" ||
+            record.kind ===
+              "VISUAL_NOTE"
         );
-
 
       if (
         directEvidence.length === 0
@@ -3890,16 +3431,13 @@ function validateSemanticEvidence(
         continue;
       }
 
-
       const claimTerms =
         extractSemanticEvidenceTerms(
           claim
         );
 
-
       const evidenceTerms =
         new Set(
-
           directEvidence.flatMap(
             record =>
               extractSemanticEvidenceTerms(
@@ -3908,13 +3446,13 @@ function validateSemanticEvidence(
           )
         );
 
-
       const matchedTerms =
         claimTerms.filter(
           term =>
-            evidenceTerms.has(term)
+            evidenceTerms.has(
+              term
+            )
         );
-
 
       const coverage =
         claimTerms.length === 0
@@ -3922,9 +3460,8 @@ function validateSemanticEvidence(
           : matchedTerms.length /
             claimTerms.length;
 
-
       if (
-        coverage < 0.75
+        coverage < 0.60
       ) {
 
         errors.push(
@@ -3934,7 +3471,6 @@ function validateSemanticEvidence(
     }
   }
 
-
   for (
     const character
     of blueprint.character_bible || []
@@ -3943,12 +3479,10 @@ function validateSemanticEvidence(
     const label =
       `Character "${character?.name || "(unnamed)"}"`;
 
-
     inspectClaims(
       character || {},
       label
     );
-
 
     if (
       character?.visual_design_status ===
@@ -3962,12 +3496,13 @@ function validateSemanticEvidence(
           ? character.visual_claims
           : [];
 
-
       if (
         claims.length === 0 ||
         claims.some(
           item =>
-            item?.classification !==
+            String(
+              item?.classification || ""
+            ).toUpperCase() !==
             "VERIFIED"
         )
       ) {
@@ -3978,7 +3513,6 @@ function validateSemanticEvidence(
       }
     }
   }
-
 
   for (
     const location
@@ -3991,13 +3525,12 @@ function validateSemanticEvidence(
     );
   }
 
-
   return errors;
 }
 
 
 /* =========================================================
-   12. BEAT CHARACTER COVERAGE
+   14. BEAT CHARACTER COVERAGE
 ========================================================= */
 
 function validateBeatCharacterCoverage(
@@ -4008,7 +3541,6 @@ function validateBeatCharacterCoverage(
 
   const characterNames =
     new Set(
-
       (
         blueprint.character_bible ||
         []
@@ -4022,11 +3554,9 @@ function validateBeatCharacterCoverage(
         .filter(Boolean)
     );
 
-
   const beats =
     blueprint.story_blueprint?.beats ||
     [];
-
 
   for (
     const beat
@@ -4040,7 +3570,6 @@ function validateBeatCharacterCoverage(
         ? beat.characters
         : [];
 
-
     if (
       listedCharacters.length === 0
     ) {
@@ -4048,8 +3577,9 @@ function validateBeatCharacterCoverage(
       errors.push(
         `Beat ${beat.beat_number} has no explicit characters array.`
       );
-    }
 
+      continue;
+    }
 
     for (
       const name
@@ -4057,91 +3587,101 @@ function validateBeatCharacterCoverage(
     ) {
 
       if (
-        !characterNames.has(name)
+        !characterNames.has(
+          name
+        )
       ) {
 
         errors.push(
-          `Beat ${beat.beat_number} uses character "${name}" without a matching character_bible entry.`
+          `Beat ${beat.beat_number} uses character "${name}" without matching character_bible entry.`
         );
       }
     }
   }
-
 
   return errors;
 }
 
 
 /* =========================================================
-   13. IMPORTANT TERM EXTRACTION
+   15. IMPORTANT TERM EXTRACTION
 ========================================================= */
 
-function extractImportantTerms(text) {
+function extractImportantTerms(
+  text
+) {
 
-  const stopWords = new Set([
+  const stopWords =
+    new Set([
 
-    "the",
-    "and",
-    "was",
-    "were",
-    "with",
-    "from",
-    "that",
-    "this",
-    "when",
-    "during",
-    "using",
-    "into",
-    "back",
-    "over",
-    "under",
-    "after",
-    "before",
-    "their",
-    "they",
-    "them",
-    "which",
-    "specific",
-    "powerful",
-    "entire",
-    "massive",
-    "critical",
-    "severely",
-    "needed",
-    "mentioned",
-    "identified",
-    "according",
-    "described"
-  ]);
+      "the",
+      "and",
+      "was",
+      "were",
+      "with",
+      "from",
+      "that",
+      "this",
+      "when",
+      "during",
+      "using",
+      "into",
+      "back",
+      "over",
+      "under",
+      "after",
+      "before",
+      "their",
+      "they",
+      "them",
+      "which",
+      "specific",
+      "powerful",
+      "entire",
+      "massive",
+      "critical",
+      "severely",
+      "needed",
+      "mentioned",
+      "identified",
+      "according",
+      "described"
+    ]);
 
-
-  return String(text || "")
+  return String(
+    text || ""
+  )
     .replace(
-      /[^a-z0-9\s-]/g,
+      /[^a-z0-9\s-]/gi,
       " "
     )
     .split(/\s+/)
     .filter(
       word =>
         word.length >= 5 &&
-        !stopWords.has(word)
+        !stopWords.has(
+          word.toLowerCase()
+        )
     )
     .slice(0, 12);
 }
 
 
 /* =========================================================
-   14. TIME RANGE PARSER
+   16. TIME RANGE PARSER
 ========================================================= */
 
-function parseTimeRange(value) {
+function parseTimeRange(
+  value
+) {
 
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
+
     return null;
   }
-
 
   const cleaned =
     value
@@ -4155,36 +3695,36 @@ function parseTimeRange(value) {
         " "
       );
 
-
   let match =
     cleaned.match(
       /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/
     );
 
-
   if (match) {
 
     return {
+
       start:
-        Number(match[1]) * 60 +
+        Number(match[1]) *
+          60 +
         Number(match[2]),
 
       end:
-        Number(match[3]) * 60 +
+        Number(match[3]) *
+          60 +
         Number(match[4])
     };
   }
-
 
   match =
     cleaned.match(
       /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
     );
 
-
   if (match) {
 
     return {
+
       start:
         Number(match[1]),
 
@@ -4193,13 +3733,12 @@ function parseTimeRange(value) {
     };
   }
 
-
   return null;
 }
 
 
 /* =========================================================
-   15. PROGRAMMATIC VALIDATOR
+   17. PROGRAMMATIC VALIDATOR
 ========================================================= */
 
 function validateBlueprint(
@@ -4213,10 +3752,10 @@ function validateBlueprint(
   const errors = [];
   const warnings = [];
 
-
   if (
     !blueprint ||
-    typeof blueprint !== "object"
+    typeof blueprint !==
+      "object"
   ) {
 
     return {
@@ -4227,11 +3766,6 @@ function validateBlueprint(
       warnings: []
     };
   }
-
-
-  /* =====================================================
-     ROOT STRUCTURE
-  ===================================================== */
 
   const requiredRootSections = [
 
@@ -4244,8 +3778,8 @@ function validateBlueprint(
     "continuity_system",
     "directing_rules",
     "quality_control"
-  ];
 
+  ];
 
   for (
     const section
@@ -4253,8 +3787,10 @@ function validateBlueprint(
   ) {
 
     if (
-      blueprint[section] === undefined ||
-      blueprint[section] === null
+      blueprint[section] ===
+        undefined ||
+      blueprint[section] ===
+        null
     ) {
 
       errors.push(
@@ -4263,10 +3799,9 @@ function validateBlueprint(
     }
   }
 
-
-  /* =====================================================
-     PROJECT SETTINGS
-  ===================================================== */
+  /*
+    PROJECT
+  */
 
   if (
     blueprint.project?.duration_seconds !==
@@ -4278,7 +3813,6 @@ function validateBlueprint(
     );
   }
 
-
   if (
     blueprint.project?.aspect_ratio !==
     aspectRatio
@@ -4289,14 +3823,13 @@ function validateBlueprint(
     );
   }
 
-
-  /* =====================================================
-     FACT LOCK
-  ===================================================== */
+  /*
+    FACT LOCK
+  */
 
   const lockedFacts =
-    factLock.locked_facts || [];
-
+    factLock?.locked_facts ||
+    [];
 
   const allBlueprintText =
     collectAllStrings(
@@ -4305,7 +3838,6 @@ function validateBlueprint(
       .join("\n")
       .toLowerCase();
 
-
   for (
     const fact
     of lockedFacts
@@ -4313,22 +3845,19 @@ function validateBlueprint(
 
     const claim =
       String(
-        fact.claim || ""
+        fact?.claim || ""
       )
         .trim()
         .toLowerCase();
-
 
     if (!claim) {
       continue;
     }
 
-
     const importantTerms =
       extractImportantTerms(
         claim
       );
-
 
     for (
       const term
@@ -4336,48 +3865,52 @@ function validateBlueprint(
     ) {
 
       if (
-        !allBlueprintText.includes(term)
+        !allBlueprintText.includes(
+          term
+        )
       ) {
 
-        errors.push(
-          `Locked fact entity missing or possibly replaced: "${term}" (${fact.evidence_id}).`
+        warnings.push(
+          `Locked fact term "${term}" from ${fact.evidence_id} is not directly visible in blueprint text.`
         );
       }
     }
   }
 
-
-  /* =====================================================
-     EVIDENCE IDS
-  ===================================================== */
+  /*
+    EVIDENCE IDS
+  */
 
   const validEvidenceIds =
     new Set([
 
-      ...lockedFacts.map(
-        item =>
-          item.evidence_id
-      ),
-
-      ...(factLock.creative_reconstructions || [])
+      ...lockedFacts
         .map(
           item =>
-            item.evidence_id
-        ),
-
-      ...(factLock.visual_notes || [])
-        .map(
-          item =>
-            item.evidence_id
+            item?.evidence_id
         )
-    ]);
+        .filter(Boolean),
 
+      ...(factLock?.creative_reconstructions || [])
+        .map(
+          item =>
+            item?.evidence_id
+        )
+        .filter(Boolean),
+
+      ...(factLock?.visual_notes || [])
+        .map(
+          item =>
+            item?.evidence_id
+        )
+        .filter(Boolean)
+
+    ]);
 
   const usedEvidenceIds =
     collectEvidenceIds(
       blueprint
     );
-
 
   for (
     const id
@@ -4385,7 +3918,9 @@ function validateBlueprint(
   ) {
 
     if (
-      !validEvidenceIds.has(id)
+      !validEvidenceIds.has(
+        id
+      )
     ) {
 
       errors.push(
@@ -4394,52 +3929,26 @@ function validateBlueprint(
     }
   }
 
+  /*
+    CHARACTER TRACEABILITY
+  */
 
-  /* =====================================================
-     CHARACTER TRACEABILITY
-  ===================================================== */
-
-  if (
-    Array.isArray(
-      blueprint.character_bible
-    )
+  for (
+    const character
+    of blueprint.character_bible || []
   ) {
 
-    for (
-      const character
-      of blueprint.character_bible
+    if (
+      !Array.isArray(
+        character.evidence_ids
+      )
     ) {
 
-      if (
-        !Array.isArray(
-          character.evidence_ids
-        )
-      ) {
-
-        errors.push(
-          `Character "${character.name}" has no evidence_ids array.`
-        );
-
-        continue;
-      }
-
-
-      if (
-        character.evidence_ids.length === 0 &&
-        !String(
-          character.identity_status || ""
-        )
-          .toLowerCase()
-          .includes("unknown")
-      ) {
-
-        warnings.push(
-          `Character "${character.name}" has no linked evidence IDs.`
-        );
-      }
+      errors.push(
+        `Character "${character.name}" has no evidence_ids array.`
+      );
     }
   }
-
 
   errors.push(
     ...validateCharacterIdentityLocks(
@@ -4447,15 +3956,13 @@ function validateBlueprint(
     )
   );
 
-
-  /* =====================================================
-     WORLD TRACEABILITY
-  ===================================================== */
+  /*
+    WORLD TRACEABILITY
+  */
 
   const locations =
     blueprint.world_bible?.locations ||
     [];
-
 
   for (
     const location
@@ -4473,12 +3980,11 @@ function validateBlueprint(
       );
     }
 
-
     const status =
       String(
-        location.evidence_status || ""
+        location.evidence_status ||
+          ""
       ).toLowerCase();
-
 
     if (
       status.includes("verified") &&
@@ -4494,10 +4000,9 @@ function validateBlueprint(
     }
   }
 
-
-  /* =====================================================
-     SEMANTIC EVIDENCE
-  ===================================================== */
+  /*
+    SEMANTIC EVIDENCE
+  */
 
   errors.push(
     ...validateSemanticEvidence(
@@ -4506,16 +4011,14 @@ function validateBlueprint(
     )
   );
 
-
-  /* =====================================================
-     BEAT SEMANTICS
-  ===================================================== */
+  /*
+    BEAT SEMANTICS
+  */
 
   const semanticValidation =
     validateBeatSemanticContinuity(
       blueprint
     );
-
 
   errors.push(
     ...semanticValidation.errors
@@ -4525,16 +4028,14 @@ function validateBlueprint(
     ...semanticValidation.warnings
   );
 
-
-  /* =====================================================
-     CAUSAL VALIDATION
-  ===================================================== */
+  /*
+    CAUSAL VALIDATION
+  */
 
   const causalValidation =
     validateCausalBeatContinuity(
       blueprint
     );
-
 
   errors.push(
     ...causalValidation.errors
@@ -4544,63 +4045,68 @@ function validateBlueprint(
     ...causalValidation.warnings
   );
 
-
-  /* =====================================================
-     CAMERA CONSISTENCY
-  ===================================================== */
+  /*
+    CAMERA CONSISTENCY
+  */
 
   const visual =
-    blueprint.visual_language || {};
-
+    blueprint.visual_language ||
+    {};
 
   const capture =
     String(
-      visual.capture_system || ""
+      visual.capture_system ||
+        ""
     ).toLowerCase();
-
 
   const emulation =
     String(
-      visual.visual_emulation || ""
+      visual.visual_emulation ||
+        ""
     ).toLowerCase();
 
-
   const digitalCameraTerms = [
+
     "arri alexa",
     "red camera",
     "sony venice",
     "digital cinema",
     "large-format digital"
+
   ];
 
-
   const literalFilmTerms = [
+
     "shot on 35mm film",
     "captured on 35mm film",
     "shot on 65mm film",
     "captured on 65mm film",
     "physical 35mm film stock"
-  ];
 
+  ];
 
   const digitalCapture =
     digitalCameraTerms.some(
       term =>
-        capture.includes(term)
+        capture.includes(
+          term
+        )
     );
-
 
   const literalFilm =
     literalFilmTerms.some(
       term =>
-        capture.includes(term)
+        capture.includes(
+          term
+        )
     );
-
 
   if (
     digitalCapture &&
     literalFilm &&
-    !emulation.includes("emulation")
+    !emulation.includes(
+      "emulation"
+    )
   ) {
 
     errors.push(
@@ -4608,15 +4114,13 @@ function validateBlueprint(
     );
   }
 
-
-  /* =====================================================
-     TIMELINE
-  ===================================================== */
+  /*
+    TIMELINE
+  */
 
   const beats =
     blueprint.story_blueprint?.beats ||
     [];
-
 
   if (
     !Array.isArray(beats) ||
@@ -4637,14 +4141,17 @@ function validateBlueprint(
         ) =>
           sum +
           Number(
-            beat.duration_seconds || 0
+            beat?.duration_seconds ||
+              0
           ),
         0
       );
 
-
     if (
-      totalBeatDuration !== duration
+      Math.abs(
+        totalBeatDuration -
+        duration
+      ) > 0.01
     ) {
 
       errors.push(
@@ -4652,9 +4159,7 @@ function validateBlueprint(
       );
     }
 
-
     let previousEnd = 0;
-
 
     for (
       const beat
@@ -4663,29 +4168,27 @@ function validateBlueprint(
 
       const range =
         parseTimeRange(
-          beat.time_range
+          beat?.time_range
         );
-
 
       if (!range) {
 
         errors.push(
-          `Could not parse time range for beat ${beat.beat_number}.`
+          `Could not parse time range for beat ${beat?.beat_number}.`
         );
 
         continue;
       }
 
-
       if (
-        range.end <= range.start
+        range.end <=
+        range.start
       ) {
 
         errors.push(
           `Beat ${beat.beat_number} has invalid time range.`
         );
       }
-
 
       if (
         Math.abs(
@@ -4699,11 +4202,30 @@ function validateBlueprint(
         );
       }
 
+      const declaredDuration =
+        Number(
+          beat.duration_seconds
+        );
+
+      const rangeDuration =
+        range.end -
+        range.start;
+
+      if (
+        Math.abs(
+          declaredDuration -
+          rangeDuration
+        ) > 0.01
+      ) {
+
+        errors.push(
+          `Beat ${beat.beat_number} duration_seconds does not match its time_range.`
+        );
+      }
 
       previousEnd =
         range.end;
     }
-
 
     if (
       Math.abs(
@@ -4718,15 +4240,13 @@ function validateBlueprint(
     }
   }
 
-
-  /* =====================================================
-     CONTINUITY SYSTEM
-  ===================================================== */
+  /*
+    CONTINUITY SYSTEM
+  */
 
   const continuity =
     blueprint.continuity_system ||
     {};
-
 
   const continuityFields = [
 
@@ -4741,8 +4261,8 @@ function validateBlueprint(
     "geography_continuity",
     "action_state_continuity",
     "physics_continuity"
-  ];
 
+  ];
 
   for (
     const field
@@ -4762,15 +4282,13 @@ function validateBlueprint(
     }
   }
 
-
-  /* =====================================================
-     CHARACTER REALISM
-  ===================================================== */
+  /*
+    CHARACTER REALISM
+  */
 
   const characters =
     blueprint.character_bible ||
     [];
-
 
   for (
     const character
@@ -4786,8 +4304,8 @@ function validateBlueprint(
       "micro_expressions",
       "costume_physics",
       "movement_signature"
-    ];
 
+    ];
 
     for (
       const field
@@ -4795,22 +4313,20 @@ function validateBlueprint(
     ) {
 
       if (
-        !character[field] ||
-        String(
-          character[field]
-        ).trim() === ""
+        !String(
+          character?.[field] ||
+            ""
+        ).trim()
       ) {
 
         errors.push(
-          `Character "${character.name}" missing realism field: ${field}.`
+          `Character "${character?.name}" missing realism field: ${field}.`
         );
       }
     }
 
-
     const lock =
-      character.character_identity_lock;
-
+      character?.character_identity_lock;
 
     if (lock) {
 
@@ -4828,7 +4344,6 @@ function validateBlueprint(
         );
       }
 
-
       if (
         normalizeSemanticText(
           lock.apparent_age
@@ -4845,10 +4360,9 @@ function validateBlueprint(
     }
   }
 
-
-  /* =====================================================
-     BEAT CHARACTER COVERAGE
-  ===================================================== */
+  /*
+    BEAT CHARACTER COVERAGE
+  */
 
   errors.push(
     ...validateBeatCharacterCoverage(
@@ -4856,28 +4370,17 @@ function validateBlueprint(
     )
   );
 
-
-  /* =====================================================
-     CRITICAL WARNING PROMOTION
-  ===================================================== */
-
   /*
-    Certain warnings are actually dangerous for downstream
-    Scene Planner and video generation.
-
-    Promote them to hard errors.
+    CRITICAL WARNINGS
   */
 
   const criticalWarningPatterns = [
 
-    /temporal\/lighting mismatch/i,
-    /environment leakage/i,
-    /too many major action/i,
-    /3 major action groups/i,
-    /causal continuity warning/i,
-    /geographic continuity/i
-  ];
+    /environment leakage risk/i,
+    /geographic continuity/i,
+    /generic identity substitution/i
 
+  ];
 
   for (
     const warning
@@ -4887,7 +4390,9 @@ function validateBlueprint(
     if (
       criticalWarningPatterns.some(
         pattern =>
-          pattern.test(warning)
+          pattern.test(
+            warning
+          )
       )
     ) {
 
@@ -4896,7 +4401,6 @@ function validateBlueprint(
       );
     }
   }
-
 
   return {
 
@@ -4911,7 +4415,7 @@ function validateBlueprint(
 
 
 /* =========================================================
-   16. AUTO CORRECTION
+   18. AUTO CORRECTION ENGINE
 ========================================================= */
 
 async function autoCorrectBlueprint(
@@ -4927,15 +4431,19 @@ async function autoCorrectBlueprint(
 
 You are the CORRECTION DIRECTOR of LongShot AI.
 
-The Director Blueprint failed semantic validation.
+The supplied Director Blueprint failed programmatic validation.
 
-Correct the blueprint WITHOUT redesigning it unnecessarily.
+Your task is to return a corrected production-ready blueprint.
+
+DO NOT merely rewrite wording.
+
+You MUST correct the actual semantic structure.
 
 =========================================================
-ABSOLUTE IDENTITY RULE
+ABSOLUTE CHARACTER IDENTITY
 =========================================================
 
-Never replace a canonical character with:
+Never replace canonical characters with:
 
 generic warrior
 generic soldier
@@ -4955,7 +4463,7 @@ Alexander-era soldier
 
 Preserve exact canonical names.
 
-Preserve:
+Preserve exactly:
 
 apparent age
 face
@@ -4977,89 +4485,176 @@ signature features
 movement signature
 
 =========================================================
-CRITICAL GEOGRAPHY RULE
+LOCATION
 =========================================================
 
-The beat location is where visible characters physically act.
+The location is the physical environment where the visible action
+actually occurs.
 
-If a character is flying, do NOT place them inside:
+Flying characters must be in:
+
+sky
+air corridor
+open air
+credible travel corridor
+
+unless the beat is explicitly:
+
+departure
+landing
+arrival
+
+Do NOT place a flying action inside:
 
 camp
+medical tent
 palace
 room
 temple
 hut
-battlefield
-other unrelated fixed location
-
-unless the action explicitly represents departure/arrival.
-
-Create a credible travel/sky/transition location.
-
-Never teleport.
+cave
 
 =========================================================
-CRITICAL TEMPORAL RULE
+TEMPORAL LOGIC
 =========================================================
 
-"before sunrise" = deadline.
+IMPORTANT:
 
-It does NOT mean sunrise.
+"before sunrise"
+"before dawn"
+"by sunrise"
+"by dawn"
 
-"approaching dawn" = transition.
+are deadlines.
 
-Do not convert these into full sunrise lighting.
+They are NOT sunrise lighting.
 
-Night + actual sunrise is allowed ONLY when the beat
-explicitly depicts the transition.
+"approaching dawn"
+"toward dawn"
+"towards dawn"
+"as dawn approaches"
+
+are transitions.
+
+They are NOT automatically daylight.
+
+Do not create a temporal conflict merely because a beat says
+"save him before sunrise" while the visual state is night.
 
 =========================================================
-CRITICAL CAUSAL RULE
+ENVIRONMENT LOGIC
 =========================================================
 
-Never jump:
+"Himalayan Peak" is compatible with:
 
-searching for herb
-→ returning while carrying mountain
+mountain peak
+mountain
+snow-covered mountain
+snowfield
+alpine terrain
+Dronagiri
 
-without an acquisition/lifting/uprooting event.
+A mountain carried into a camp is an OBJECT,
+not a mountain ENVIRONMENT.
 
-Likewise:
+Do not reject a beat because a character is carrying a mountain
+while physically located at a camp.
+
+=========================================================
+ACTION DENSITY
+=========================================================
+
+ONE dominant action per 5–6 second beat.
+
+IMPORTANT:
+
+You ARE ALLOWED to change the number of beats.
+
+You ARE ALLOWED to split an overloaded beat into multiple beats.
+
+You ARE ALLOWED to redistribute durations.
+
+The final total MUST remain exactly:
+
+${duration} seconds.
+
+Example:
+
+30 sec may use:
+
+5 × 6 sec
+
+or
+
+6 × 5 sec
+
+or
+
+4 + 5 + 5 + 6 + 5 + 5
+
+etc.
+
+as long as:
+
+- timeline starts at 0
+- no gaps
+- no overlaps
+- timeline ends at ${duration}
+- each beat has matching duration_seconds
+- causal order is preserved.
+
+=========================================================
+CAUSAL CONTINUITY
+=========================================================
+
+Never:
+
+search
+→ mountain carried
+
+without:
+
+search
+→ acquisition/lifting/uprooting
+→ carry/return
+
+Never:
 
 medicine search
 → revival
 
-must preserve the treatment event.
+without treatment.
 
-arrival must follow travel/departure when locations change.
+Never:
 
-=========================================================
-CRITICAL ACTION DENSITY RULE
-=========================================================
+travel
+→ arrival
 
-A 5–6 second beat should have ONE dominant action.
-
-Do not compress:
-
-arrival + mountain lifting + return + healing + revival
-
-into one beat.
-
-Distribute causal actions across beats.
-
-Preserve total requested duration exactly.
+without travel/departure.
 
 =========================================================
-ENVIRONMENT RULE
+ENVIRONMENT LEAKAGE
 =========================================================
 
 Do not leak:
 
+camp into sky
 mountain scenery into camp
-camp props into open sky
-ocean scenery into mountain
-palace architecture into forest
-forest scenery into unrelated fixed location
+ocean into mountain
+palace into forest
+forest into unrelated fixed location
+
+Again:
+
+A carried object does NOT automatically become the environment.
+
+=========================================================
+EVIDENCE
+=========================================================
+
+Preserve all valid evidence IDs.
+
+Never create new evidence IDs.
 
 =========================================================
 RESEARCH
@@ -5087,14 +4682,27 @@ CLOSED EVIDENCE IDS
 
 ${JSON.stringify(
   [
-    ...(factLock.locked_facts || [])
-      .map(item => item.evidence_id),
+    ...(factLock?.locked_facts || [])
+      .map(
+        item =>
+          item?.evidence_id
+      )
+      .filter(Boolean),
 
-    ...(factLock.creative_reconstructions || [])
-      .map(item => item.evidence_id),
+    ...(factLock?.creative_reconstructions || [])
+      .map(
+        item =>
+          item?.evidence_id
+      )
+      .filter(Boolean),
 
-    ...(factLock.visual_notes || [])
-      .map(item => item.evidence_id)
+    ...(factLock?.visual_notes || [])
+      .map(
+        item =>
+          item?.evidence_id
+      )
+      .filter(Boolean)
+
   ],
   null,
   2
@@ -5131,37 +4739,36 @@ ${JSON.stringify(
 )}
 
 =========================================================
-CORRECTION REQUIREMENTS
+MANDATORY CORRECTIONS
 =========================================================
 
-1. Preserve all locked facts.
-2. Preserve all canonical names.
-3. Preserve evidence IDs.
-4. Preserve character identity locks.
-5. Preserve age continuity.
-6. Preserve face continuity.
-7. Preserve body continuity.
-8. Preserve costume continuity.
-9. Preserve geography.
-10. Preserve temporal continuity.
-11. Preserve physical realism.
-12. Preserve causal order.
-13. Correct location/action conflicts.
+1. Preserve all canonical names.
+2. Preserve all identity locks.
+3. Preserve all apparent ages.
+4. Preserve face continuity.
+5. Preserve body continuity.
+6. Preserve costume continuity.
+7. Preserve research-supported facts.
+8. Preserve valid evidence IDs.
+9. Correct location/action mismatch.
+10. Correct geography.
+11. Correct temporal logic.
+12. Treat deadlines as deadlines.
+13. Treat temporal phrases as transitions when appropriate.
 14. Correct environment leakage.
-15. Correct location transitions.
-16. Correct action density.
-17. Correct causal gaps.
-18. Do not turn deadline language into actual sunrise.
-19. Do not use generic character substitutes.
-20. Every visible acting character must be in characters[].
-21. Every beat must have a real physical location.
-22. Exact duration must remain ${duration}s.
-23. Exact aspect ratio must remain ${aspectRatio}.
-24. Evidence IDs must come only from the closed list.
+15. Do not treat carried objects as environments.
+16. Correct causal gaps.
+17. Correct action density.
+18. Split overloaded beats when necessary.
+19. Keep exact total duration ${duration}s.
+20. Keep exact aspect ratio ${aspectRatio}.
+21. Keep contiguous timeline.
+22. Every visible character must appear in characters[].
+23. Every beat must have a real physical location.
+24. No generic canonical character substitution.
 25. Return ONLY corrected JSON.
 
 `;
-
 
   const response =
     await ai.interactions.create({
@@ -5184,16 +4791,14 @@ CORRECTION REQUIREMENTS
       }
     });
 
-
   if (
-    !response.output_text
+    !response?.output_text
   ) {
 
     throw new Error(
       "Correction Engine returned empty output."
     );
   }
-
 
   try {
 
@@ -5211,7 +4816,7 @@ CORRECTION REQUIREMENTS
 
 
 /* =========================================================
-   17. PUBLIC DIRECTOR FUNCTION
+   19. FINAL PUBLIC DIRECTOR FUNCTION
 ========================================================= */
 
 export async function createDirectorBlueprint(
@@ -5220,20 +4825,46 @@ export async function createDirectorBlueprint(
   aspectRatio = "9:16"
 ) {
 
+  if (
+    ![20, 25, 30].includes(
+      Number(duration)
+    )
+  ) {
+
+    throw new Error(
+      `Unsupported duration ${duration}. LongShot Director Engine supports only 20, 25 or 30 seconds.`
+    );
+  }
+
+  const allowedAspectRatios = [
+    "9:16",
+    "16:9",
+    "1:1"
+  ];
+
+  if (
+    !allowedAspectRatios.includes(
+      aspectRatio
+    )
+  ) {
+
+    throw new Error(
+      `Unsupported aspect ratio "${aspectRatio}".`
+    );
+  }
+
   const research =
     normalizeResearch(
       researchData
     );
-
 
   const factLock =
     buildFactLock(
       research
     );
 
-
   /*
-    FIRST DIRECTOR GENERATION
+    FIRST GENERATION
   */
 
   let blueprint =
@@ -5243,7 +4874,6 @@ export async function createDirectorBlueprint(
       duration,
       aspectRatio
     );
-
 
   /*
     FIRST VALIDATION
@@ -5258,10 +4888,8 @@ export async function createDirectorBlueprint(
       aspectRatio
     );
 
-
   let autoCorrected =
     false;
-
 
   /*
     AUTO-CORRECTION PASS 1
@@ -5285,12 +4913,11 @@ export async function createDirectorBlueprint(
         duration,
 
         aspectRatio
-      );
 
+      );
 
     autoCorrected =
       true;
-
 
     validation =
       validateBlueprint(
@@ -5304,15 +4931,12 @@ export async function createDirectorBlueprint(
         duration,
 
         aspectRatio
+
       );
   }
 
-
   /*
     AUTO-CORRECTION PASS 2
-
-    Only if the first correction still contains
-    semantic errors.
   */
 
   if (
@@ -5333,12 +4957,11 @@ export async function createDirectorBlueprint(
         duration,
 
         aspectRatio
-      );
 
+      );
 
     autoCorrected =
       true;
-
 
     validation =
       validateBlueprint(
@@ -5352,14 +4975,12 @@ export async function createDirectorBlueprint(
         duration,
 
         aspectRatio
+
       );
   }
 
-
   /*
     HARD FAILURE
-
-    Scene Planner MUST NOT receive an invalid blueprint.
   */
 
   if (
@@ -5371,23 +4992,47 @@ export async function createDirectorBlueprint(
         " | "
       );
 
-
     throw new Error(
-
       `Director Blueprint failed validation after auto-correction: ${errorMessage}`
-
     );
   }
-
 
   /*
     FINAL MACHINE VALIDATION
   */
 
+  const finalCheck =
+    validateBlueprint(
+
+      blueprint,
+
+      research,
+
+      factLock,
+
+      duration,
+
+      aspectRatio
+
+    );
+
+  if (
+    !finalCheck.passed
+  ) {
+
+    throw new Error(
+      `Director Blueprint failed final machine validation: ${finalCheck.errors.join(" | ")}`
+    );
+  }
+
+  /*
+    FINAL VALIDATION METADATA
+  */
+
   blueprint._longshot_validation = {
 
     validator_version:
-      "V5.0",
+      "V5.1",
 
     passed:
       true,
@@ -5399,15 +5044,15 @@ export async function createDirectorBlueprint(
       [],
 
     warnings:
-      validation.warnings,
+      finalCheck.warnings,
 
     validated_duration:
       duration,
 
     validated_aspect_ratio:
       aspectRatio
-  };
 
+  };
 
   return blueprint;
 }
