@@ -91,11 +91,21 @@ app.post("/api/director", async (req, res) => {
       status: "director_completed",
       blueprint
     });
-  } catch (error) {
+   } catch (error) {
     console.error("Director Error:", error);
-console.error("Director Error Details:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+
+    console.error(
+      "Director Error Details:",
+      JSON.stringify(
+        error,
+        Object.getOwnPropertyNames(error),
+        2
+      )
+    );
+
     res.status(500).json({
-      error: error.message
+      error: error.message,
+      details: error
     });
   }
 });
