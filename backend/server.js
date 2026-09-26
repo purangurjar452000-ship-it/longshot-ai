@@ -93,7 +93,7 @@ app.post("/api/director", async (req, res) => {
     });
   } catch (error) {
     console.error("Director Error:", error);
-
+console.error("Director Error Details:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     res.status(500).json({
       error: error.message
     });
