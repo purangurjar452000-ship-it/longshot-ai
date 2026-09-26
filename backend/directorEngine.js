@@ -1,12 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 
 /* =========================================================
-   LONGSHOT AI — DIRECTOR ENGINE V5.1
+   LONGSHOT AI — DIRECTOR ENGINE V5.2
    =========================================================
    Purpose:
    Research → Fact Lock → Director Blueprint
 
-   V5.1 hardening:
+   V5.2 hardening:
    - Canonical character identity locks
    - Apparent age lock
    - Face/body/costume continuity
@@ -20,11 +20,13 @@ import { GoogleGenAI } from "@google/genai";
    - Action-density validation
    - Causal continuity
    - Evidence traceability
+   - Deterministic evidence normalization
    - Exact duration / timeline validation
    - Exact aspect-ratio validation
    - Camera consistency
    - Automatic correction
    - Beat splitting allowed during correction
+   - Final machine validation
    ========================================================= */
 
 const ai = new GoogleGenAI({
@@ -204,8 +206,12 @@ const directorSchema = {
             items: {
               type: "object",
               properties: {
-                claim: { type: "string" },
-                classification: { type: "string" },
+                claim: {
+                  type: "string"
+                },
+                classification: {
+                  type: "string"
+                },
                 evidence_ids: {
                   type: "array",
                   items: {
@@ -337,7 +343,6 @@ const directorSchema = {
               "forbidden_substitutions"
             ]
           }
-
         },
 
         required: [
@@ -432,8 +437,12 @@ const directorSchema = {
                 items: {
                   type: "object",
                   properties: {
-                    claim: { type: "string" },
-                    classification: { type: "string" },
+                    claim: {
+                      type: "string"
+                    },
+                    classification: {
+                      type: "string"
+                    },
                     evidence_ids: {
                       type: "array",
                       items: {
@@ -559,6 +568,8 @@ const directorSchema = {
 
         beats: {
           type: "array",
+          minItems: 1,
+          maxItems: 20,
           items: {
 
             type: "object",
@@ -632,8 +643,12 @@ const directorSchema = {
                 items: {
                   type: "object",
                   properties: {
-                    claim: { type: "string" },
-                    classification: { type: "string" },
+                    claim: {
+                      type: "string"
+                    },
+                    classification: {
+                      type: "string"
+                    },
                     evidence_ids: {
                       type: "array",
                       items: {
@@ -800,7 +815,6 @@ const directorSchema = {
         "negative_checks"
       ]
     }
-
   },
 
   required: [
@@ -827,12 +841,12 @@ You are the MASTER DIRECTOR ENGINE of LongShot AI.
 
 Your job is NOT merely to divide a story into scenes.
 
-You must create a production-grade cinematic Director Blueprint
-that can safely be passed to a downstream Scene Planner and video
-generation system.
+Create a production-grade cinematic Director Blueprint that can
+safely be passed to a downstream Scene Planner and video generation
+system.
 
 =========================================================
-CORE PRINCIPLE
+CORE PIPELINE
 =========================================================
 
 RESEARCH → FACT LOCK → CHARACTER LOCK → WORLD LOCK →
@@ -842,7 +856,7 @@ CONTINUITY → VALIDATION
 Do not invent factual claims when research does not support them.
 
 Creative reconstruction is allowed only when explicitly marked
-as inferred or creative reconstruction.
+INFERRED or CREATIVE_RECONSTRUCTION.
 
 =========================================================
 CANONICAL CHARACTER IDENTITY
@@ -868,33 +882,33 @@ injured warrior
 Alexander's commander
 Alexander-era soldier
 
-The exact canonical name must remain unchanged.
+Exact canonical names must remain unchanged.
 
-The character identity fingerprint must remain unchanged:
+Preserve the complete identity fingerprint:
 
-- apparent age
-- face identity
-- facial structure
-- eyes
-- hair/fur
-- skin/body texture
-- body type
-- height/scale
-- body proportions
-- musculature
-- anatomy
-- costume
-- costume colors
-- costume material
-- costume physics
-- accessories
-- signature features
-- movement signature
+apparent age
+face identity
+facial structure
+eyes
+hair/fur
+skin/body texture
+body type
+height/scale
+body proportions
+musculature
+anatomy
+costume
+costume colors
+costume material
+costume physics
+accessories
+signature features
+movement signature
 
-Do NOT age a character up or down between beats.
+Never age a character between beats.
 
-Do NOT replace a mythological character with a historical-looking
-generic person.
+Never replace a canonical mythological character with a generic
+historical-looking person.
 
 =========================================================
 REAL HUMAN / CREATURE APPEARANCE
@@ -903,23 +917,14 @@ REAL HUMAN / CREATURE APPEARANCE
 Characters must look physically believable.
 
 No plastic skin.
-
 No wax skin.
-
 No cartoon anatomy.
-
 No rubber limbs.
-
 No malformed hands.
-
 No extra fingers.
-
 No fused fingers.
-
 No distorted feet.
-
 No floating body parts.
-
 No inconsistent body proportions.
 
 Maintain realistic:
@@ -946,21 +951,23 @@ Verified facts are immutable.
 Do not alter:
 
 canonical names
-locations
-events
+documented locations
+documented events
 relationships
 sequence of documented events
 research-supported objects
 research-supported identities
 
 If exact visual details are unknown, use restrained cinematic
-reconstruction rather than presenting invented details as verified fact.
+reconstruction and mark it INFERRED or CREATIVE_RECONSTRUCTION.
+
+Never mark an unsupported visual reconstruction VERIFIED.
 
 =========================================================
 LOCATION RULE
 =========================================================
 
-A beat location means the physical environment in which the visible
+A beat location means the physical environment where the visible
 characters are actually acting.
 
 If a character is flying through the sky, do NOT place the beat inside:
@@ -974,9 +981,7 @@ hut
 battlefield
 mountain interior
 
-unless the action explicitly depicts departure or arrival.
-
-A flying character requires a physically credible travel/sky corridor.
+unless the action explicitly depicts departure, landing or arrival.
 
 =========================================================
 GEOGRAPHY RULE
@@ -984,55 +989,41 @@ GEOGRAPHY RULE
 
 Never teleport characters.
 
-A location change must have a credible:
+A location change requires:
 
 departure
 travel
 arrival
-or explicit transition
-
-Do not place geographically distant environments in the same beat
-unless the beat explicitly establishes the transition.
+or an explicit physical transition.
 
 =========================================================
 TEMPORAL RULE
 =========================================================
 
-IMPORTANT:
+These are DEADLINES, NOT visual time states:
 
-"before sunrise"
-"before dawn"
-"by sunrise"
-"by dawn"
-"before first light"
+before sunrise
+before dawn
+by sunrise
+by dawn
+before first light
+by first light
 
-are DEADLINES.
+These are TRANSITIONS:
 
-They are NOT actual sunrise lighting.
+approaching dawn
+toward dawn
+towards dawn
+as dawn approaches
+night fades
+night gives way
+night recedes
+sky gradually brightens
 
-"approaching dawn"
-"toward dawn"
-"towards dawn"
-"as dawn approaches"
-"night fades"
-"night gives way"
-
-are TRANSITIONS.
-
-They do NOT automatically mean full daylight.
-
-Only treat sunrise/dawn as an actual visual time state when the beat
-explicitly depicts:
-
-sunrise
-first light
-golden sunrise light
-daybreak
-sun rising
-sky visibly brightening as the actual event
+Do NOT treat a deadline as sunrise lighting.
 
 Night + sunrise is allowed only when the beat explicitly depicts
-the transition.
+the actual transition.
 
 =========================================================
 ACTION DENSITY
@@ -1040,21 +1031,23 @@ ACTION DENSITY
 
 A 5–6 second beat should normally contain ONE dominant action.
 
-Do NOT compress:
+A beat of 3 seconds MUST contain at most ONE major action group.
+
+A beat of 4–6 seconds MUST contain at most TWO major action groups.
+
+If three or more independent major actions are required,
+SPLIT THE BEAT.
+
+Do not compress:
 
 arrival
-mountain lifting
+mountain acquisition
 return flight
 medicine preparation
 healing
 revival
 
-into one beat.
-
-Causal actions must be distributed across multiple beats.
-
-The downstream generator needs enough time to visually execute each
-important action.
+into one tiny beat.
 
 =========================================================
 CAUSAL CONTINUITY
@@ -1062,66 +1055,77 @@ CAUSAL CONTINUITY
 
 Never jump:
 
-searching
-→ possessing a major object
+search → possession
 
 without acquisition.
 
 Never jump:
 
-medicine search
-→ revival
+medicine search → revival
 
 without treatment.
 
 Never jump:
 
-travel
-→ arrival
+travel → arrival
 
-without credible movement/departure.
+without movement/departure.
 
-Every major physical state change must have a cause.
+A treatment and revival MAY occur in the same beat only when the
+beat has enough duration and clearly presents both as a continuous
+causal action.
 
 =========================================================
-ENVIRONMENT CONTINUITY
+ENVIRONMENT
 =========================================================
 
 Do not leak:
 
 mountain scenery into camp
-camp architecture into open sky
-ocean scenery into mountain
-forest scenery into unrelated fixed locations
-palace architecture into wilderness
-snowfield scenery into tropical camp
+camp architecture into sky
+ocean into mountain
+forest into unrelated fixed locations
+palace into wilderness
+snowfield into tropical camp
 
-IMPORTANT:
+A carried object is NOT automatically an environment.
 
-A carried object is NOT automatically an environmental location.
+Example:
 
-For example:
+Hanuman carries a mountain into a camp.
 
-"Hanuman carries a mountain into the camp"
+The physical location remains the camp unless the beat explicitly
+changes the environment.
 
-does NOT mean the camp suddenly becomes a mountain environment.
+=========================================================
+EVIDENCE STATUS
+=========================================================
+
+Use:
+
+VERIFIED
+when directly supported by locked facts or visual notes.
+
+INFERRED
+when reasonably reconstructed from supported context.
+
+CREATIVE_RECONSTRUCTION
+when intentionally invented for cinematic visualization.
+
+UNKNOWN
+when evidence is insufficient.
+
+Never use VERIFIED merely because something feels historically or
+visually plausible.
 
 =========================================================
 CINEMATOGRAPHY
 =========================================================
 
-Use:
-
-cinematic camera movement
-physically plausible lenses
-natural depth of field
-realistic motion blur
-motivated framing
-credible perspective
-professional composition
-cinematic lighting
-natural atmospheric depth
-consistent visual language
+Use physically plausible lenses, motivated framing, cinematic
+camera movement, natural depth of field, realistic motion blur,
+credible perspective, professional composition and consistent
+lighting.
 
 Avoid random camera changes.
 
@@ -1131,12 +1135,9 @@ AUTHENTICITY
 
 For mythology:
 
-respect the research evidence.
-
+Respect research evidence.
 Do not fabricate scripture quotations.
-
 Do not introduce unsupported named characters.
-
 Do not replace canonical figures with generic substitutes.
 
 =========================================================
@@ -1147,7 +1148,7 @@ Before returning JSON verify:
 
 1. Exact duration.
 2. Exact aspect ratio.
-3. Exact canonical character names.
+3. Exact canonical names.
 4. Character identity locks.
 5. Apparent ages.
 6. Face continuity.
@@ -1156,9 +1157,9 @@ Before returning JSON verify:
 9. Location validity.
 10. Geographic continuity.
 11. Temporal continuity.
-12. Deadline language not mistaken for sunrise.
+12. Deadline language is not mistaken for sunrise.
 13. Environment compatibility.
-14. Carried objects not mistaken for environments.
+14. Carried objects are not mistaken for environments.
 15. Action density.
 16. Causal sequence.
 17. Character physical presence.
@@ -1190,6 +1191,7 @@ function normalizeResearch(data) {
         locked_facts: [],
         visual_notes: [],
         creative_reconstructions: [],
+        unknowns: [],
         sources: []
       };
     }
@@ -1206,7 +1208,6 @@ function normalizeResearch(data) {
 function buildFactLock(research) {
 
   return {
-
     locked_facts:
       Array.isArray(research?.locked_facts)
         ? research.locked_facts
@@ -1265,27 +1266,19 @@ Aspect ratio: ${aspectRatio}
 RESEARCH
 =========================================================
 
-${JSON.stringify(
-  research,
-  null,
-  2
-)}
+${JSON.stringify(research, null, 2)}
 
 =========================================================
 FACT LOCK
 =========================================================
 
-${JSON.stringify(
-  factLock,
-  null,
-  2
-)}
+${JSON.stringify(factLock, null, 2)}
 
 =========================================================
 DURATION REQUIREMENT
 =========================================================
 
-The beat count is flexible.
+Beat count is flexible.
 
 Do NOT force a fixed number of beats.
 
@@ -1297,14 +1290,16 @@ geographic continuity
 temporal continuity
 character continuity
 
-For 20 seconds, 25 seconds and 30 seconds, practical beat counts
-may be approximately 4–7 depending on complexity.
+The final timeline MUST:
 
-Every beat must have a real duration.
+start at 0
+contain no gaps
+contain no overlaps
+end exactly at ${duration}
 
-All beat durations together must equal EXACTLY ${duration} seconds.
+All beat durations MUST total exactly ${duration} seconds.
 
-The timeline must be contiguous from 0 to ${duration}.
+If an action becomes overloaded, split it into additional beats.
 
 =========================================================
 OUTPUT
@@ -1323,12 +1318,9 @@ Return ONLY valid JSON matching the provided schema.
         instruction,
 
       response_format: {
-
         type: "text",
-
         mime_type:
           "application/json",
-
         schema:
           directorSchema
       }
@@ -1341,13 +1333,10 @@ Return ONLY valid JSON matching the provided schema.
   }
 
   try {
-
     return JSON.parse(
       response.output_text
     );
-
   } catch {
-
     throw new Error(
       "Director Engine returned invalid JSON."
     );
@@ -1410,9 +1399,7 @@ function collectEvidenceIds(value) {
       return;
     }
 
-    if (
-      typeof item === "object"
-    ) {
+    if (typeof item === "object") {
 
       if (
         Array.isArray(
@@ -1435,7 +1422,6 @@ function collectEvidenceIds(value) {
         const child
         of Object.values(item)
       ) {
-
         walk(child);
       }
     }
@@ -1524,11 +1510,6 @@ function countMatches(
    7. BEAT TEXT HELPERS
 ========================================================= */
 
-/*
-  IMPORTANT:
-  transition_to_next is intentionally excluded from action analysis.
-*/
-
 function buildBeatActionText(
   beat
 ) {
@@ -1611,6 +1592,7 @@ function validateCharacterIdentityLocks(
     "alexander's commander",
     "alexander era soldier",
     "alexander-era soldier"
+
   ];
 
   for (
@@ -1624,11 +1606,9 @@ function validateCharacterIdentityLocks(
       ).trim();
 
     if (!name) {
-
       errors.push(
         "Character bible contains an unnamed character."
       );
-
       continue;
     }
 
@@ -1636,11 +1616,9 @@ function validateCharacterIdentityLocks(
       character.character_identity_lock;
 
     if (!lock) {
-
       errors.push(
         `Character "${name}" is missing character_identity_lock.`
       );
-
       continue;
     }
 
@@ -1666,6 +1644,7 @@ function validateCharacterIdentityLocks(
       "accessories",
       "signature_features",
       "movement_signature"
+
     ];
 
     for (
@@ -1711,31 +1690,30 @@ function validateCharacterIdentityLocks(
       );
     }
 
-    const identityText =
-      [
-        character.name,
-        character.identity_type,
-        character.apparent_age,
-        character.face_identity,
-        character.facial_structure,
-        character.eyes,
-        character.hair_or_fur,
-        character.skin_or_body_texture,
-        character.body_type,
-        character.height_or_scale,
-        character.body_proportions,
-        character.musculature,
-        character.anatomy,
-        character.costume,
-        character.costume_colors,
-        character.costume_material,
-        character.costume_physics,
-        character.accessories,
-        character.signature_features,
-        character.movement_signature
-      ]
-        .join(" ")
-        .toLowerCase();
+    const identityText = [
+      character.name,
+      character.identity_type,
+      character.apparent_age,
+      character.face_identity,
+      character.facial_structure,
+      character.eyes,
+      character.hair_or_fur,
+      character.skin_or_body_texture,
+      character.body_type,
+      character.height_or_scale,
+      character.body_proportions,
+      character.musculature,
+      character.anatomy,
+      character.costume,
+      character.costume_colors,
+      character.costume_material,
+      character.costume_physics,
+      character.accessories,
+      character.signature_features,
+      character.movement_signature
+    ]
+      .join(" ")
+      .toLowerCase();
 
     for (
       const forbidden
@@ -1773,6 +1751,7 @@ const temporalDeadlineTerms = [
   "by first light",
   "prior to sunrise",
   "prior to dawn"
+
 ];
 
 
@@ -1798,6 +1777,7 @@ const temporalTransitionTerms = [
   "sunrise begins",
   "daybreak begins",
   "lighting gradually changes"
+
 ];
 
 
@@ -1885,9 +1865,7 @@ function getTemporalStates(
 ) {
 
   const actualText =
-    stripTemporalMetaLanguage(
-      text
-    );
+    stripTemporalMetaLanguage(text);
 
   const states = new Set();
 
@@ -1904,7 +1882,6 @@ function getTemporalStates(
         terms
       )
     ) {
-
       states.add(state);
     }
   }
@@ -1934,25 +1911,22 @@ function hasTemporalConflict(
   }
 
   const actionText =
-    buildBeatActionText(
-      beat
-    );
+    buildBeatActionText(beat);
 
   const beatStates =
     getTemporalStates(
       actionText
     );
 
-  const locationText =
-    [
-      location.name,
-      location.environment,
-      location.lighting,
-      location.weather,
-      location.terrain
-    ]
-      .filter(Boolean)
-      .join(" ");
+  const locationText = [
+    location.name,
+    location.environment,
+    location.lighting,
+    location.weather,
+    location.terrain
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const locationStates =
     getTemporalStates(
@@ -1964,7 +1938,6 @@ function hasTemporalConflict(
       actionText
     )
   ) {
-
     return false;
   }
 
@@ -1975,18 +1948,19 @@ function hasTemporalConflict(
       locationStates.has("morning")
     )
   ) {
-
     return true;
   }
 
   if (
-    beatStates.has("morning") &&
+    (
+      beatStates.has("dawn") ||
+      beatStates.has("morning")
+    ) &&
     (
       locationStates.has("night") ||
       locationStates.has("evening")
     )
   ) {
-
     return true;
   }
 
@@ -2007,7 +1981,6 @@ const environmentCompatibility = [
       "open sea",
       "ocean water"
     ],
-
     compatible: [
       "ocean",
       "sea",
@@ -2026,7 +1999,6 @@ const environmentCompatibility = [
       "dune",
       "desert terrain"
     ],
-
     compatible: [
       "desert",
       "sand",
@@ -2044,7 +2016,6 @@ const environmentCompatibility = [
       "mountain",
       "himalayan peak"
     ],
-
     compatible: [
       "mountain",
       "peak",
@@ -2063,7 +2034,6 @@ const environmentCompatibility = [
       "jungle",
       "woodland"
     ],
-
     compatible: [
       "forest",
       "jungle",
@@ -2079,7 +2049,6 @@ const environmentCompatibility = [
       "battlefield",
       "war field"
     ],
-
     compatible: [
       "battlefield",
       "war",
@@ -2095,7 +2064,6 @@ const environmentCompatibility = [
       "encampment",
       "military camp"
     ],
-
     compatible: [
       "camp",
       "encampment",
@@ -2109,7 +2077,6 @@ const environmentCompatibility = [
     terms: [
       "palace"
     ],
-
     compatible: [
       "palace",
       "royal",
@@ -2121,7 +2088,6 @@ const environmentCompatibility = [
     terms: [
       "temple"
     ],
-
     compatible: [
       "temple",
       "shrine",
@@ -2133,7 +2099,6 @@ const environmentCompatibility = [
     terms: [
       "cave"
     ],
-
     compatible: [
       "cave",
       "cavern",
@@ -2154,17 +2119,18 @@ function isEnvironmentCompatible(
       locationText
     );
 
+  const normalizedTerm =
+    normalizeSemanticText(
+      environmentTerm
+    );
+
   const group =
     environmentCompatibility.find(
       item =>
         item.terms.some(
           term =>
-            normalizeSemanticText(
-              environmentTerm
-            ) ===
-            normalizeSemanticText(
-              term
-            )
+            normalizeSemanticText(term) ===
+            normalizedTerm
         )
     );
 
@@ -2472,10 +2438,8 @@ function validateBeatSemanticContinuity(
 
     const fixedScore =
       countMatches(
-        normalizeSemanticText(
-          locationTextForValidation(
-            location
-          )
+        locationTextForValidation(
+          location
         ),
         fixedLocationTerms
       );
@@ -2485,11 +2449,6 @@ function validateBeatSemanticContinuity(
         actionText,
         destinationTerms
       );
-
-    /*
-      Airborne action inside fixed location is a real contradiction
-      unless it is explicitly departure/arrival.
-    */
 
     if (
       airborneScore > 0 &&
@@ -2502,12 +2461,6 @@ function validateBeatSemanticContinuity(
       );
     }
 
-    /*
-      Same location + travel language is allowed when travel happens
-      within or from that location, unless the beat explicitly says
-      destination elsewhere.
-    */
-
     if (
       travelScore >= 2 &&
       fixedScore > 0 &&
@@ -2519,10 +2472,6 @@ function validateBeatSemanticContinuity(
         `Beat ${beat.beat_number} contains strong travel language while its selected location is a fixed environment "${location.name}".`
       );
     }
-
-    /*
-      Named world locations must not leak into unrelated beats.
-    */
 
     for (
       const worldLocation
@@ -2545,9 +2494,8 @@ function validateBeatSemanticContinuity(
       }
 
       if (
-        fullText.includes(
-          worldName
-        ) &&
+        normalizeSemanticText(fullText)
+          .includes(worldName) &&
         !containsAny(
           actionText,
           destinationTerms.concat(
@@ -2562,10 +2510,6 @@ function validateBeatSemanticContinuity(
       }
     }
 
-    /*
-      Temporal validation.
-    */
-
     if (
       hasTemporalConflict(
         beat,
@@ -2577,10 +2521,6 @@ function validateBeatSemanticContinuity(
         `Beat ${beat.beat_number} has a temporal/lighting conflict with location "${location.name}".`
       );
     }
-
-    /*
-      Environment leakage.
-    */
 
     const carriedMountain =
       beatContainsCarriedMountain(
@@ -2621,21 +2561,21 @@ function validateBeatSemanticContinuity(
         continue;
       }
 
-      /*
-        A mountain being carried is an object/action, not the
-        environmental setting.
-      */
-
       if (
         carriedMountain &&
         (
           environmentTerm === "mountain peak" ||
           environmentTerm === "mountain slope" ||
-          environmentTerm === "snow-covered mountain" ||
-          environmentTerm === "mountain"
+          environmentTerm === "snow-covered mountain"
         )
       ) {
+        continue;
+      }
 
+      if (
+        environmentTerm === "mountain" &&
+        carriedMountain
+      ) {
         continue;
       }
 
@@ -2654,11 +2594,6 @@ function validateBeatSemanticContinuity(
       }
     }
 
-    /*
-      Action density.
-      transition_to_next is intentionally NOT counted.
-    */
-
     const majorActionGroups =
       actionGroups.filter(
         group =>
@@ -2668,29 +2603,37 @@ function validateBeatSemanticContinuity(
           )
       );
 
+    const durationSeconds =
+      Number(
+        beat.duration_seconds
+      );
+
     if (
       majorActionGroups.length >= 4
     ) {
 
       errors.push(
-        `Beat ${beat.beat_number} is overloaded: ${majorActionGroups.length} independent major action groups are compressed into ${beat.duration_seconds}s.`
+        `Beat ${beat.beat_number} is overloaded: ${majorActionGroups.length} independent major action groups are compressed into ${durationSeconds}s.`
       );
 
     } else if (
-      majorActionGroups.length === 3 &&
-      Number(
-        beat.duration_seconds
-      ) <= 6
+      durationSeconds <= 3 &&
+      majorActionGroups.length >= 2
     ) {
 
       errors.push(
-        `Beat ${beat.beat_number} contains 3 major action groups in only ${beat.duration_seconds}s.`
+        `Beat ${beat.beat_number} contains ${majorActionGroups.length} major action groups in only ${durationSeconds}s. A 3-second beat may contain only one dominant action.`
+      );
+
+    } else if (
+      durationSeconds <= 6 &&
+      majorActionGroups.length >= 3
+    ) {
+
+      errors.push(
+        `Beat ${beat.beat_number} contains 3 major action groups in only ${durationSeconds}s.`
       );
     }
-
-    /*
-      Physical character presence.
-    */
 
     const listedCharacters =
       Array.isArray(
@@ -2710,19 +2653,9 @@ function validateBeatSemanticContinuity(
           character
         )
       ) {
-
-        /*
-          Names may only be in the characters[] field.
-          Do not fail solely because the prose omits the name.
-        */
-
         continue;
       }
     }
-
-    /*
-      Adjacent geographic continuity.
-    */
 
     if (
       index > 0
@@ -2750,18 +2683,11 @@ function validateBeatSemanticContinuity(
         )
       ) {
 
-        const transitionText =
-          [
-            buildBeatActionText(
-              previous
-            ),
-            buildBeatTransitionText(
-              previous
-            ),
-            buildBeatActionText(
-              beat
-            )
-          ].join(" ");
+        const transitionText = [
+          buildBeatActionText(previous),
+          buildBeatTransitionText(previous),
+          buildBeatActionText(beat)
+        ].join(" ");
 
         const hasMovement =
           containsAny(
@@ -2777,11 +2703,6 @@ function validateBeatSemanticContinuity(
             `Geographic continuity failure between beat ${previous.beat_number} and beat ${beat.beat_number}: location changes without explicit travel/departure/arrival.`
           );
         }
-
-        /*
-          Environment leakage across transitions is checked only when
-          the current beat itself actually describes that environment.
-        */
 
         const previousLocationObject =
           locationMap.get(
@@ -2976,20 +2897,12 @@ function validateCausalBeatContinuity(
         : null;
 
     const currentText =
-      textForBeat(
-        current
-      );
+      textForBeat(current);
 
     const previousText =
       previous
-        ? textForBeat(
-            previous
-          )
+        ? textForBeat(previous)
         : "";
-
-    /*
-      A. OBJECT ACQUISITION → CARRY
-    */
 
     const currentCarriesMountain =
       containsAny(
@@ -3006,40 +2919,50 @@ function validateCausalBeatContinuity(
     ) {
 
       let acquisitionFound =
-        false;
+        containsAny(
+          currentText,
+          acquisitionTerms
+        ) &&
+        containsAny(
+          currentText,
+          mountainObjectTerms
+        );
 
-      for (
-        let back =
-          Math.max(
-            0,
-            index - 4
-          );
+      if (!acquisitionFound) {
 
-        back < index;
+        for (
+          let back =
+            Math.max(
+              0,
+              index - 4
+            );
 
-        back++
-      ) {
+          back < index;
 
-        const earlierText =
-          textForBeat(
-            beats[back]
-          );
-
-        if (
-          containsAny(
-            earlierText,
-            acquisitionTerms
-          ) &&
-          containsAny(
-            earlierText,
-            mountainObjectTerms
-          )
+          back++
         ) {
 
-          acquisitionFound =
-            true;
+          const earlierText =
+            textForBeat(
+              beats[back]
+            );
 
-          break;
+          if (
+            containsAny(
+              earlierText,
+              acquisitionTerms
+            ) &&
+            containsAny(
+              earlierText,
+              mountainObjectTerms
+            )
+          ) {
+
+            acquisitionFound =
+              true;
+
+            break;
+          }
         }
       }
 
@@ -3053,18 +2976,21 @@ function validateCausalBeatContinuity(
       }
     }
 
-    /*
-      B. REVIVAL → TREATMENT
-    */
-
     const currentRevives =
       containsAny(
         currentText,
         healingOutcomeTerms
       );
 
+    const treatmentInCurrentBeat =
+      containsAny(
+        currentText,
+        treatmentTerms
+      );
+
     if (
-      currentRevives
+      currentRevives &&
+      !treatmentInCurrentBeat
     ) {
 
       let treatmentFound =
@@ -3111,10 +3037,6 @@ function validateCausalBeatContinuity(
       }
     }
 
-    /*
-      C. ARRIVAL → TRAVEL
-    */
-
     const currentArrives =
       containsAny(
         currentText,
@@ -3154,10 +3076,6 @@ function validateCausalBeatContinuity(
         }
       }
     }
-
-    /*
-      D. SEARCH → MAJOR OBJECT OUTCOME
-    */
 
     const currentHasOutcome =
       containsAny(
@@ -3252,20 +3170,16 @@ function extractSemanticEvidenceTerms(
 }
 
 
-function validateSemanticEvidence(
-  blueprint,
+/* =========================================================
+   13A. EVIDENCE NORMALIZATION
+   IMPORTANT:
+   Unsupported VERIFIED claims are downgraded instead of
+   causing endless LLM correction loops.
+========================================================= */
+
+function buildEvidenceMap(
   factLock
 ) {
-
-  const errors = [];
-
-  const allowedClassifications =
-    new Set([
-      "VERIFIED",
-      "INFERRED",
-      "CREATIVE_RECONSTRUCTION",
-      "UNKNOWN"
-    ]);
 
   const evidenceById =
     new Map();
@@ -3330,6 +3244,320 @@ function validateSemanticEvidence(
       );
     }
   }
+
+  return evidenceById;
+}
+
+
+function getClaimEvidenceQuality(
+  claim,
+  ids,
+  evidenceById
+) {
+
+  const linkedRecords =
+    (
+      Array.isArray(ids)
+        ? ids
+        : []
+    )
+      .map(
+        id =>
+          evidenceById.get(id)
+      )
+      .filter(Boolean);
+
+  const directEvidence =
+    linkedRecords.filter(
+      record =>
+        record.kind ===
+          "LOCKED_FACT" ||
+        record.kind ===
+          "VISUAL_NOTE"
+    );
+
+  const creativeEvidence =
+    linkedRecords.filter(
+      record =>
+        record.kind ===
+        "CREATIVE_RECONSTRUCTION"
+    );
+
+  if (
+    directEvidence.length === 0 &&
+    creativeEvidence.length === 0
+  ) {
+
+    return {
+      supported: false,
+      direct: false,
+      creative: false,
+      coverage: 0
+    };
+  }
+
+  const claimTerms =
+    extractSemanticEvidenceTerms(
+      claim
+    );
+
+  if (
+    claimTerms.length === 0
+  ) {
+
+    return {
+      supported: true,
+      direct:
+        directEvidence.length > 0,
+      creative:
+        creativeEvidence.length > 0 &&
+        directEvidence.length === 0,
+      coverage: 1
+    };
+  }
+
+  const evidenceTerms =
+    new Set(
+      linkedRecords.flatMap(
+        record =>
+          extractSemanticEvidenceTerms(
+            record.text
+          )
+      )
+    );
+
+  const matchedTerms =
+    claimTerms.filter(
+      term =>
+        evidenceTerms.has(term)
+    );
+
+  const coverage =
+    matchedTerms.length /
+    claimTerms.length;
+
+  return {
+    supported:
+      coverage >= 0.60,
+    direct:
+      directEvidence.length > 0 &&
+      coverage >= 0.60,
+    creative:
+      creativeEvidence.length > 0 &&
+      directEvidence.length === 0,
+    coverage
+  };
+}
+
+
+function normalizeEvidenceClassifications(
+  blueprint,
+  factLock
+) {
+
+  if (
+    !blueprint ||
+    typeof blueprint !== "object"
+  ) {
+    return blueprint;
+  }
+
+  const evidenceById =
+    buildEvidenceMap(
+      factLock
+    );
+
+  function normalizeClaims(
+    entity
+  ) {
+
+    if (
+      !entity ||
+      !Array.isArray(
+        entity.visual_claims
+      )
+    ) {
+      return;
+    }
+
+    for (
+      const claimItem
+      of entity.visual_claims
+    ) {
+
+      if (!claimItem) {
+        continue;
+      }
+
+      const classification =
+        String(
+          claimItem.classification || ""
+        )
+          .trim()
+          .toUpperCase();
+
+      if (
+        classification !==
+        "VERIFIED"
+      ) {
+        continue;
+      }
+
+      const quality =
+        getClaimEvidenceQuality(
+          String(
+            claimItem.claim || ""
+          ),
+          claimItem.evidence_ids,
+          evidenceById
+        );
+
+      if (
+        quality.direct
+      ) {
+        claimItem.classification =
+          "VERIFIED";
+
+      } else if (
+        quality.creative
+      ) {
+        claimItem.classification =
+          "CREATIVE_RECONSTRUCTION";
+
+      } else {
+        claimItem.classification =
+          "INFERRED";
+      }
+    }
+  }
+
+  for (
+    const character
+    of blueprint.character_bible || []
+  ) {
+
+    normalizeClaims(
+      character
+    );
+
+    const claims =
+      Array.isArray(
+        character.visual_claims
+      )
+        ? character.visual_claims
+        : [];
+
+    if (
+      String(
+        character.visual_design_status || ""
+      ).toUpperCase() ===
+        "VERIFIED" &&
+      claims.some(
+        item =>
+          String(
+            item?.classification || ""
+          ).toUpperCase() !==
+          "VERIFIED"
+      )
+    ) {
+
+      character.visual_design_status =
+        "INFERRED";
+    }
+  }
+
+  for (
+    const location
+    of blueprint.world_bible?.locations || []
+  ) {
+
+    normalizeClaims(
+      location
+    );
+
+    const status =
+      String(
+        location.evidence_status || ""
+      )
+        .trim()
+        .toUpperCase();
+
+    const ids =
+      Array.isArray(
+        location.evidence_ids
+      )
+        ? location.evidence_ids
+        : [];
+
+    if (
+      status === "VERIFIED" &&
+      ids.length === 0
+    ) {
+
+      location.evidence_status =
+        "INFERRED";
+    }
+
+    if (
+      status === "VERIFIED" &&
+      ids.length > 0
+    ) {
+
+      const quality =
+        getClaimEvidenceQuality(
+          `${location.name} ${location.environment} ${location.terrain}`,
+          ids,
+          evidenceById
+        );
+
+      if (
+        !quality.direct
+      ) {
+
+        location.evidence_status =
+          quality.creative
+            ? "CREATIVE_RECONSTRUCTION"
+            : "INFERRED";
+      }
+    }
+  }
+
+  for (
+    const beat
+    of blueprint.story_blueprint?.beats || []
+  ) {
+    normalizeClaims(
+      beat
+    );
+  }
+
+  return blueprint;
+}
+
+
+/* =========================================================
+   13B. EVIDENCE VALIDATOR
+========================================================= */
+
+function validateSemanticEvidence(
+  blueprint,
+  factLock
+) {
+
+  const errors = [];
+
+  const allowedClassifications =
+    new Set([
+      "VERIFIED",
+      "INFERRED",
+      "CREATIVE_RECONSTRUCTION",
+      "UNKNOWN"
+    ]);
+
+  const evidenceById =
+    buildEvidenceMap(
+      factLock
+    );
 
   function inspectClaims(
     entity,
@@ -3399,73 +3627,22 @@ function validateSemanticEvidence(
         classification !==
         "VERIFIED"
       ) {
-
         continue;
       }
 
-      const linkedRecords =
-        ids
-          .map(
-            id =>
-              evidenceById.get(id)
-          )
-          .filter(Boolean);
-
-      const directEvidence =
-        linkedRecords.filter(
-          record =>
-            record.kind ===
-              "LOCKED_FACT" ||
-            record.kind ===
-              "VISUAL_NOTE"
+      const quality =
+        getClaimEvidenceQuality(
+          claim,
+          ids,
+          evidenceById
         );
 
       if (
-        directEvidence.length === 0
+        !quality.direct
       ) {
 
         errors.push(
-          `${label} marks a visual claim VERIFIED without direct locked fact/visual-note evidence.`
-        );
-
-        continue;
-      }
-
-      const claimTerms =
-        extractSemanticEvidenceTerms(
-          claim
-        );
-
-      const evidenceTerms =
-        new Set(
-          directEvidence.flatMap(
-            record =>
-              extractSemanticEvidenceTerms(
-                record.text
-              )
-          )
-        );
-
-      const matchedTerms =
-        claimTerms.filter(
-          term =>
-            evidenceTerms.has(
-              term
-            )
-        );
-
-      const coverage =
-        claimTerms.length === 0
-          ? 0
-          : matchedTerms.length /
-            claimTerms.length;
-
-      if (
-        coverage < 0.60
-      ) {
-
-        errors.push(
-          `${label} has a VERIFIED visual claim insufficiently supported by cited evidence.`
+          `${label} marks a visual claim VERIFIED without sufficient direct locked fact/visual-note evidence.`
         );
       }
     }
@@ -3485,7 +3662,9 @@ function validateSemanticEvidence(
     );
 
     if (
-      character?.visual_design_status ===
+      String(
+        character?.visual_design_status || ""
+      ).toUpperCase() ===
       "VERIFIED"
     ) {
 
@@ -3522,6 +3701,37 @@ function validateSemanticEvidence(
     inspectClaims(
       location || {},
       `Location "${location?.name || "(unnamed)"}"`
+    );
+
+    const status =
+      String(
+        location?.evidence_status || ""
+      ).toUpperCase();
+
+    if (
+      status === "VERIFIED" &&
+      (
+        !Array.isArray(
+          location.evidence_ids
+        ) ||
+        location.evidence_ids.length === 0
+      )
+    ) {
+
+      errors.push(
+        `Location "${location?.name || "(unnamed)"}" is marked verified without evidence.`
+      );
+    }
+  }
+
+  for (
+    const beat
+    of blueprint.story_blueprint?.beats || []
+  ) {
+
+    inspectClaims(
+      beat || {},
+      `Beat ${beat?.beat_number}`
     );
   }
 
@@ -3646,6 +3856,7 @@ function extractImportantTerms(
       "identified",
       "according",
       "described"
+
     ]);
 
   return String(
@@ -3679,7 +3890,6 @@ function parseTimeRange(
     typeof value !==
     "string"
   ) {
-
     return null;
   }
 
@@ -3718,7 +3928,7 @@ function parseTimeRange(
 
   match =
     cleaned.match(
-      /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/
+      /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/ 
     );
 
   if (match) {
@@ -3799,10 +4009,6 @@ function validateBlueprint(
     }
   }
 
-  /*
-    PROJECT
-  */
-
   if (
     blueprint.project?.duration_seconds !==
     duration
@@ -3822,10 +4028,6 @@ function validateBlueprint(
       `Aspect ratio mismatch. Expected ${aspectRatio}, got ${blueprint.project?.aspect_ratio}.`
     );
   }
-
-  /*
-    FACT LOCK
-  */
 
   const lockedFacts =
     factLock?.locked_facts ||
@@ -3877,10 +4079,6 @@ function validateBlueprint(
     }
   }
 
-  /*
-    EVIDENCE IDS
-  */
-
   const validEvidenceIds =
     new Set([
 
@@ -3929,10 +4127,6 @@ function validateBlueprint(
     }
   }
 
-  /*
-    CHARACTER TRACEABILITY
-  */
-
   for (
     const character
     of blueprint.character_bible || []
@@ -3955,10 +4149,6 @@ function validateBlueprint(
       blueprint
     )
   );
-
-  /*
-    WORLD TRACEABILITY
-  */
 
   const locations =
     blueprint.world_bible?.locations ||
@@ -4000,20 +4190,12 @@ function validateBlueprint(
     }
   }
 
-  /*
-    SEMANTIC EVIDENCE
-  */
-
   errors.push(
     ...validateSemanticEvidence(
       blueprint,
       factLock
     )
   );
-
-  /*
-    BEAT SEMANTICS
-  */
 
   const semanticValidation =
     validateBeatSemanticContinuity(
@@ -4028,10 +4210,6 @@ function validateBlueprint(
     ...semanticValidation.warnings
   );
 
-  /*
-    CAUSAL VALIDATION
-  */
-
   const causalValidation =
     validateCausalBeatContinuity(
       blueprint
@@ -4044,10 +4222,6 @@ function validateBlueprint(
   warnings.push(
     ...causalValidation.warnings
   );
-
-  /*
-    CAMERA CONSISTENCY
-  */
 
   const visual =
     blueprint.visual_language ||
@@ -4066,39 +4240,31 @@ function validateBlueprint(
     ).toLowerCase();
 
   const digitalCameraTerms = [
-
     "arri alexa",
     "red camera",
     "sony venice",
     "digital cinema",
     "large-format digital"
-
   ];
 
   const literalFilmTerms = [
-
     "shot on 35mm film",
     "captured on 35mm film",
     "shot on 65mm film",
     "captured on 65mm film",
     "physical 35mm film stock"
-
   ];
 
   const digitalCapture =
     digitalCameraTerms.some(
       term =>
-        capture.includes(
-          term
-        )
+        capture.includes(term)
     );
 
   const literalFilm =
     literalFilmTerms.some(
       term =>
-        capture.includes(
-          term
-        )
+        capture.includes(term)
     );
 
   if (
@@ -4113,10 +4279,6 @@ function validateBlueprint(
       "Camera contradiction: digital capture is combined with literal physical film capture."
     );
   }
-
-  /*
-    TIMELINE
-  */
 
   const beats =
     blueprint.story_blueprint?.beats ||
@@ -4162,9 +4324,39 @@ function validateBlueprint(
     let previousEnd = 0;
 
     for (
-      const beat
-      of beats
+      let index = 0;
+      index < beats.length;
+      index++
     ) {
+
+      const beat =
+        beats[index];
+
+      const expectedBeatNumber =
+        index + 1;
+
+      if (
+        Number(
+          beat?.beat_number
+        ) !==
+        expectedBeatNumber
+      ) {
+
+        errors.push(
+          `Beat numbering error: expected beat ${expectedBeatNumber}, got ${beat?.beat_number}.`
+        );
+      }
+
+      if (
+        Number(
+          beat?.duration_seconds
+        ) <= 0
+      ) {
+
+        errors.push(
+          `Beat ${beat?.beat_number} has non-positive duration.`
+        );
+      }
 
       const range =
         parseTimeRange(
@@ -4240,10 +4432,6 @@ function validateBlueprint(
     }
   }
 
-  /*
-    CONTINUITY SYSTEM
-  */
-
   const continuity =
     blueprint.continuity_system ||
     {};
@@ -4281,10 +4469,6 @@ function validateBlueprint(
       );
     }
   }
-
-  /*
-    CHARACTER REALISM
-  */
 
   const characters =
     blueprint.character_bible ||
@@ -4360,50 +4544,13 @@ function validateBlueprint(
     }
   }
 
-  /*
-    BEAT CHARACTER COVERAGE
-  */
-
   errors.push(
     ...validateBeatCharacterCoverage(
       blueprint
     )
   );
 
-  /*
-    CRITICAL WARNINGS
-  */
-
-  const criticalWarningPatterns = [
-
-    /environment leakage risk/i,
-    /geographic continuity/i,
-    /generic identity substitution/i
-
-  ];
-
-  for (
-    const warning
-    of warnings
-  ) {
-
-    if (
-      criticalWarningPatterns.some(
-        pattern =>
-          pattern.test(
-            warning
-          )
-      )
-    ) {
-
-      errors.push(
-        `CRITICAL SEMANTIC WARNING PROMOTED TO ERROR: ${warning}`
-      );
-    }
-  }
-
   return {
-
     passed:
       errors.length === 0,
 
@@ -4433,17 +4580,18 @@ You are the CORRECTION DIRECTOR of LongShot AI.
 
 The supplied Director Blueprint failed programmatic validation.
 
-Your task is to return a corrected production-ready blueprint.
+Return a corrected production-ready blueprint.
 
-DO NOT merely rewrite wording.
-
-You MUST correct the actual semantic structure.
+Do NOT merely rewrite wording.
+Correct the actual semantic structure.
 
 =========================================================
-ABSOLUTE CHARACTER IDENTITY
+CHARACTER IDENTITY
 =========================================================
 
-Never replace canonical characters with:
+Never replace canonical characters.
+
+Never use:
 
 generic warrior
 generic soldier
@@ -4461,10 +4609,9 @@ injured warrior
 Alexander's commander
 Alexander-era soldier
 
-Preserve exact canonical names.
+Preserve:
 
-Preserve exactly:
-
+canonical name
 apparent age
 face
 facial structure
@@ -4485,123 +4632,118 @@ signature features
 movement signature
 
 =========================================================
+EVIDENCE STATUS
+=========================================================
+
+CRITICAL:
+
+Do NOT mark a location VERIFIED unless it has direct evidence
+from a locked fact or visual note.
+
+Do NOT mark a visual claim VERIFIED unless its evidence_ids
+directly support the claim.
+
+Use INFERRED for reasonable reconstruction.
+
+Use CREATIVE_RECONSTRUCTION for intentionally invented cinematic
+visual details.
+
+Use UNKNOWN when evidence is insufficient.
+
+Never create new evidence IDs.
+
+=========================================================
 LOCATION
 =========================================================
 
-The location is the physical environment where the visible action
-actually occurs.
+Location is the physical environment of the visible action.
 
-Flying characters must be in:
+Flying characters belong in:
 
 sky
 air corridor
 open air
 credible travel corridor
 
-unless the beat is explicitly:
-
-departure
-landing
-arrival
-
-Do NOT place a flying action inside:
-
-camp
-medical tent
-palace
-room
-temple
-hut
-cave
+unless explicitly departing, landing or arriving.
 
 =========================================================
 TEMPORAL LOGIC
 =========================================================
 
-IMPORTANT:
+These are DEADLINES:
 
-"before sunrise"
-"before dawn"
-"by sunrise"
-"by dawn"
+before sunrise
+before dawn
+by sunrise
+by dawn
+before first light
 
-are deadlines.
+Do NOT convert them into sunrise lighting.
 
-They are NOT sunrise lighting.
+These are TRANSITIONS:
 
-"approaching dawn"
-"toward dawn"
-"towards dawn"
-"as dawn approaches"
+approaching dawn
+toward dawn
+towards dawn
+as dawn approaches
+night fades
+night gives way
 
-are transitions.
-
-They are NOT automatically daylight.
-
-Do not create a temporal conflict merely because a beat says
-"save him before sunrise" while the visual state is night.
+Do NOT automatically convert them into daylight.
 
 =========================================================
 ENVIRONMENT LOGIC
 =========================================================
 
+A carried mountain is an OBJECT, not an ENVIRONMENT.
+
 "Himalayan Peak" is compatible with:
 
-mountain peak
 mountain
-snow-covered mountain
+mountain peak
+snow
 snowfield
 alpine terrain
 Dronagiri
+Himalayan terrain
 
-A mountain carried into a camp is an OBJECT,
-not a mountain ENVIRONMENT.
-
-Do not reject a beat because a character is carrying a mountain
-while physically located at a camp.
+Do not turn a camp into a mountain environment merely because
+Hanuman carries a mountain into it.
 
 =========================================================
 ACTION DENSITY
 =========================================================
 
-ONE dominant action per 5–6 second beat.
+This rule is HARD:
 
-IMPORTANT:
+3-second beat:
+maximum 1 major action group.
 
-You ARE ALLOWED to change the number of beats.
+4–6 second beat:
+maximum 2 major action groups.
 
-You ARE ALLOWED to split an overloaded beat into multiple beats.
+If a beat has 3 or more major action groups,
+SPLIT IT.
 
-You ARE ALLOWED to redistribute durations.
+You ARE allowed to increase beat count.
 
-The final total MUST remain exactly:
+You ARE allowed to redistribute durations.
 
-${duration} seconds.
+You ARE allowed to create 7, 8, 9 or more beats if necessary.
 
-Example:
+Total duration MUST remain exactly ${duration} seconds.
 
-30 sec may use:
+Timeline MUST:
 
-5 × 6 sec
+start at 0
+have no gaps
+have no overlaps
+end exactly at ${duration}
 
-or
+Beat numbers MUST be sequential:
 
-6 × 5 sec
-
-or
-
-4 + 5 + 5 + 6 + 5 + 5
-
-etc.
-
-as long as:
-
-- timeline starts at 0
-- no gaps
-- no overlaps
-- timeline ends at ${duration}
-- each beat has matching duration_seconds
-- causal order is preserved.
+1, 2, 3, 4...
 
 =========================================================
 CAUSAL CONTINUITY
@@ -4609,52 +4751,24 @@ CAUSAL CONTINUITY
 
 Never:
 
-search
-→ mountain carried
+search → possession
 
-without:
-
-search
-→ acquisition/lifting/uprooting
-→ carry/return
+without acquisition.
 
 Never:
 
-medicine search
-→ revival
+medicine search → revival
 
 without treatment.
 
 Never:
 
-travel
-→ arrival
+travel → arrival
 
 without travel/departure.
 
-=========================================================
-ENVIRONMENT LEAKAGE
-=========================================================
-
-Do not leak:
-
-camp into sky
-mountain scenery into camp
-ocean into mountain
-palace into forest
-forest into unrelated fixed location
-
-Again:
-
-A carried object does NOT automatically become the environment.
-
-=========================================================
-EVIDENCE
-=========================================================
-
-Preserve all valid evidence IDs.
-
-Never create new evidence IDs.
+Treatment + revival may happen in the same beat only if clearly
+causal and not overloaded.
 
 =========================================================
 RESEARCH
@@ -4739,33 +4853,33 @@ ${JSON.stringify(
 )}
 
 =========================================================
-MANDATORY CORRECTIONS
+MANDATORY
 =========================================================
 
-1. Preserve all canonical names.
-2. Preserve all identity locks.
-3. Preserve all apparent ages.
+1. Preserve canonical character names.
+2. Preserve identity locks.
+3. Preserve apparent ages.
 4. Preserve face continuity.
 5. Preserve body continuity.
 6. Preserve costume continuity.
-7. Preserve research-supported facts.
+7. Preserve verified research facts.
 8. Preserve valid evidence IDs.
 9. Correct location/action mismatch.
 10. Correct geography.
 11. Correct temporal logic.
-12. Treat deadlines as deadlines.
-13. Treat temporal phrases as transitions when appropriate.
-14. Correct environment leakage.
-15. Do not treat carried objects as environments.
-16. Correct causal gaps.
-17. Correct action density.
-18. Split overloaded beats when necessary.
-19. Keep exact total duration ${duration}s.
-20. Keep exact aspect ratio ${aspectRatio}.
-21. Keep contiguous timeline.
+12. Do not mistake deadlines for sunrise.
+13. Correct environment leakage.
+14. Do not treat carried objects as environments.
+15. Correct causal gaps.
+16. Correct action density.
+17. Split overloaded beats.
+18. Keep exact ${duration}s duration.
+19. Keep exact ${aspectRatio} aspect ratio.
+20. Keep contiguous timeline.
+21. Use sequential beat numbers.
 22. Every visible character must appear in characters[].
 23. Every beat must have a real physical location.
-24. No generic canonical character substitution.
+24. Never mark unsupported visual details VERIFIED.
 25. Return ONLY corrected JSON.
 
 `;
@@ -4825,9 +4939,12 @@ export async function createDirectorBlueprint(
   aspectRatio = "9:16"
 ) {
 
+  duration =
+    Number(duration);
+
   if (
     ![20, 25, 30].includes(
-      Number(duration)
+      duration
     )
   ) {
 
@@ -4864,7 +4981,7 @@ export async function createDirectorBlueprint(
     );
 
   /*
-    FIRST GENERATION
+    INITIAL GENERATION
   */
 
   let blueprint =
@@ -4874,6 +4991,15 @@ export async function createDirectorBlueprint(
       duration,
       aspectRatio
     );
+
+  /*
+    DETERMINISTIC EVIDENCE NORMALIZATION
+  */
+
+  normalizeEvidenceClassifications(
+    blueprint,
+    factLock
+  );
 
   /*
     FIRST VALIDATION
@@ -4901,37 +5027,29 @@ export async function createDirectorBlueprint(
 
     blueprint =
       await autoCorrectBlueprint(
-
         blueprint,
-
         validation,
-
         research,
-
         factLock,
-
         duration,
-
         aspectRatio
-
       );
 
     autoCorrected =
       true;
 
+    normalizeEvidenceClassifications(
+      blueprint,
+      factLock
+    );
+
     validation =
       validateBlueprint(
-
         blueprint,
-
         research,
-
         factLock,
-
         duration,
-
         aspectRatio
-
       );
   }
 
@@ -4945,37 +5063,67 @@ export async function createDirectorBlueprint(
 
     blueprint =
       await autoCorrectBlueprint(
-
         blueprint,
-
         validation,
-
         research,
-
         factLock,
-
         duration,
-
         aspectRatio
-
       );
 
     autoCorrected =
       true;
 
+    normalizeEvidenceClassifications(
+      blueprint,
+      factLock
+    );
+
     validation =
       validateBlueprint(
-
         blueprint,
-
         research,
-
         factLock,
-
         duration,
-
         aspectRatio
+      );
+  }
 
+  /*
+    TARGETED AUTO-CORRECTION PASS 3
+    Used only if the first two passes still leave a
+    structural validation failure.
+  */
+
+  if (
+    !validation.passed
+  ) {
+
+    blueprint =
+      await autoCorrectBlueprint(
+        blueprint,
+        validation,
+        research,
+        factLock,
+        duration,
+        aspectRatio
+      );
+
+    autoCorrected =
+      true;
+
+    normalizeEvidenceClassifications(
+      blueprint,
+      factLock
+    );
+
+    validation =
+      validateBlueprint(
+        blueprint,
+        research,
+        factLock,
+        duration,
+        aspectRatio
       );
   }
 
@@ -5001,19 +5149,18 @@ export async function createDirectorBlueprint(
     FINAL MACHINE VALIDATION
   */
 
+  normalizeEvidenceClassifications(
+    blueprint,
+    factLock
+  );
+
   const finalCheck =
     validateBlueprint(
-
       blueprint,
-
       research,
-
       factLock,
-
       duration,
-
       aspectRatio
-
     );
 
   if (
@@ -5032,7 +5179,7 @@ export async function createDirectorBlueprint(
   blueprint._longshot_validation = {
 
     validator_version:
-      "V5.1",
+      "V5.2",
 
     passed:
       true,
