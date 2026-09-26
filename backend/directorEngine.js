@@ -2430,17 +2430,113 @@ function validateBeatSemanticContinuity(blueprint) {
        E. TEMPORAL + LIGHTING CONSISTENCY
     ----------------------------------------------------- */
 
-    if (
-      hasTemporalConflict(
-        beat,
-        location
-      )
-    ) {
+   // Temporal/lighting validation must allow:
+// 1. explicit transitions,
+// 2. travel sequences,
+// 3. rapidly changing locations,
+// 4. supernatural/high-speed movement,
+// 5. cinematic transition beats.
+//
+// A location's world_bible lighting is the default state,
+// not an immutable lighting lock for every beat.
 
-      errors.push(
-        `Beat ${beatNumber} has a temporal/lighting contradiction with location "${beat.location}". Beat action and world-bible lighting must represent the same coherent temporal state or an explicit transition.`
-      );
-    }
+const actionText = [
+  beat.story_action || "",
+  beat.character_action || "",
+  beat.visual_priority || "",
+  beat.transition_to_next || ""
+]
+  .join(" ")
+  .toLowerCase();
+
+const locationText = [
+  location.time_of_day || "",
+  location.lighting_conditions || "",
+  location.celestial_conditions || ""
+]
+  .join(" ")
+  .toLowerCase();
+
+const transitionTerms = [
+  "sunrise",
+  "sunset",
+  "dawn",
+  "dusk",
+  "nightfall",
+  "daybreak",
+  "pre-dawn",
+  "transition",
+  "changes from",
+  "changes into",
+  "becomes",
+  "light changes",
+  "sky brightens",
+  "sky darkens",
+  "approaches dawn",
+  "approaching dawn",
+  "toward dawn",
+  "towards dawn",
+  "travel",
+  "travels",
+  "travelling",
+  "traveling",
+  "flies",
+  "flying",
+  "flight",
+  "journey",
+  "crosses",
+  "crossing",
+  "returns",
+  "returning",
+  "approaches",
+  "approaching",
+  "arrives",
+  "arrival",
+  "moves toward",
+  "moves towards",
+  "passes over"
+];
+
+const hasExplicitTransition =
+  transitionTerms.some(term =>
+    actionText.includes(term)
+  );
+
+const temporalConflictPairs = [
+  ["night", "sunrise"],
+  ["night", "daybreak"],
+  ["night", "dawn"],
+  ["midnight", "sunrise"],
+  ["midnight", "dawn"],
+  ["pre-dawn", "full daylight"],
+  ["pre-dawn", "midday"],
+  ["daylight", "midnight"],
+  ["daylight", "deep night"]
+];
+
+const hasTemporalConflict =
+  temporalConflictPairs.some(([a, b]) =>
+    (
+      actionText.includes(a) &&
+      locationText.includes(b)
+    ) ||
+    (
+      actionText.includes(b) &&
+      locationText.includes(a)
+    )
+  );
+
+// Do NOT reject travel/transition beats.
+// Only reject a direct contradiction when there is
+// no explicit transition or movement context.
+if (
+  hasTemporalConflict &&
+  !hasExplicitTransition
+) {
+  errors.push(
+    `Beat ${beat.beat_number} has a temporal/lighting contradiction with location "${beat.location}". Beat action and world-bible lighting must represent the same coherent temporal state or an explicit transition.`
+  );
+}
 
 
     /* -----------------------------------------------------
