@@ -1330,9 +1330,14 @@ console.log(
 );
 
 try {
-  return JSON.parse(
-    response.output_text
-  );
+  const cleanedOutput =
+  response.output_text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+return JSON.parse(cleanedOutput);
 } catch (error) {
   throw new Error(
     "Director Engine returned invalid JSON. RAW OUTPUT: " +
