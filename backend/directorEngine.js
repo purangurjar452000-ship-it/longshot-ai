@@ -1899,7 +1899,7 @@ function countMatches(text, terms) {
 
 
 /* =========================================================
-   8. SEMANTIC BEAT VALIDATOR
+   8. SEMANTIC BEAT VALIDATOR — FINAL FIXED VERSION
 ========================================================= */
 
 function validateBeatSemanticContinuity(blueprint) {
@@ -2013,6 +2013,7 @@ function validateBeatSemanticContinuity(blueprint) {
   ];
 
   const temporalGroups = {
+
     night: [
       "night",
       "midnight",
@@ -2052,6 +2053,7 @@ function validateBeatSemanticContinuity(blueprint) {
   };
 
   const majorActionGroups = [
+
     [
       "fly",
       "flying",
@@ -2169,57 +2171,57 @@ function validateBeatSemanticContinuity(blueprint) {
   }
 
 
-  function hasTemporalConflict(beat, location) {
+  function getTemporalStates(text) {
 
-    if (!location) return false;
+    const states = [];
+
+    for (
+      const [state, terms]
+      of Object.entries(temporalGroups)
+    ) {
+
+      if (
+        containsAny(
+          text,
+          terms
+        )
+      ) {
+        states.push(state);
+      }
+    }
+
+    return states;
+  }
+
+
+  function hasTemporalConflict(
+    beat,
+    location
+  ) {
+
+    if (!location) {
+      return false;
+    }
 
     const beatText =
       buildBeatText(beat);
 
-    const locationTime =
-      normalizeSemanticText(
-        location.time_of_day
+    const locationText =
+      normalizeSemanticText([
+        location.time_of_day || "",
+        location.lighting_conditions || "",
+        location.celestial_conditions || ""
+      ].join(" "));
+
+    const beatTemporalStates =
+      getTemporalStates(
+        beatText
       );
 
-    const locationLighting =
-      normalizeSemanticText(
-        location.lighting_conditions
+    const locationTemporalStates =
+      getTemporalStates(
+        locationText
       );
-
-    const environmentText =
-      `${locationTime} ${locationLighting}`;
-
-    const beatTemporalStates = [];
-
-    for (const [state, terms] of Object.entries(
-      temporalGroups
-    )) {
-
-      if (
-        containsAny(
-          beatText,
-          terms
-        )
-      ) {
-        beatTemporalStates.push(state);
-      }
-    }
-
-    const locationTemporalStates = [];
-
-    for (const [state, terms] of Object.entries(
-      temporalGroups
-    )) {
-
-      if (
-        containsAny(
-          environmentText,
-          terms
-        )
-      ) {
-        locationTemporalStates.push(state);
-      }
-    }
 
     if (
       beatTemporalStates.length === 0 ||
@@ -2229,11 +2231,14 @@ function validateBeatSemanticContinuity(blueprint) {
     }
 
     const incompatiblePairs = [
+
       ["night", "dawn"],
       ["night", "morning"],
       ["night", "evening"],
+
       ["predawn", "morning"],
       ["predawn", "evening"],
+
       ["dawn", "night"],
       ["morning", "night"],
       ["evening", "morning"]
@@ -2241,18 +2246,30 @@ function validateBeatSemanticContinuity(blueprint) {
 
     return incompatiblePairs.some(
       ([a, b]) =>
-        beatTemporalStates.includes(a) &&
-        locationTemporalStates.includes(b)
+        (
+          beatTemporalStates.includes(a) &&
+          locationTemporalStates.includes(b)
+        ) ||
+        (
+          beatTemporalStates.includes(b) &&
+          locationTemporalStates.includes(a)
+        )
     );
   }
 
 
-  for (let index = 0; index < beats.length; index++) {
+  for (
+    let index = 0;
+    index < beats.length;
+    index++
+  ) {
 
-    const beat = beats[index];
+    const beat =
+      beats[index];
 
     const beatNumber =
-      beat?.beat_number || index + 1;
+      beat?.beat_number ||
+      index + 1;
 
     const beatText =
       buildBeatText(beat);
@@ -2260,8 +2277,15 @@ function validateBeatSemanticContinuity(blueprint) {
     const location =
       getLocation(beat);
 
+    /*
+      IMPORTANT:
+      locationText is declared ONLY ONCE.
+      Do not redeclare it anywhere inside this loop.
+    */
     const locationText =
-      getLocationEnvironment(location);
+      getLocationEnvironment(
+        location
+      );
 
 
     /* -----------------------------------------------------
@@ -2368,7 +2392,9 @@ function validateBeatSemanticContinuity(blueprint) {
         )
       );
 
-    if (environmentTravelConflict) {
+    if (
+      environmentTravelConflict
+    ) {
 
       errors.push(
         `Beat ${beatNumber} has a travel/environment action that conflicts with its fixed location "${beat.location}". The beat should use a physically compatible travel location, transition space, origin, or destination.`
@@ -2380,14 +2406,19 @@ function validateBeatSemanticContinuity(blueprint) {
        D. NAMED WORLD LOCATION IN ACTION
     ----------------------------------------------------- */
 
-    for (const worldLocation of locations) {
+    for (
+      const worldLocation
+      of locations
+    ) {
 
       const worldName =
         String(
           worldLocation?.name || ""
         ).trim();
 
-      if (!worldName) continue;
+      if (!worldName) {
+        continue;
+      }
 
       const normalizedWorldName =
         normalizeSemanticText(
@@ -2402,8 +2433,11 @@ function validateBeatSemanticContinuity(blueprint) {
       if (
         normalizedWorldName &&
         normalizedWorldName.length >= 5 &&
-        normalizedBeatLocation !== normalizedWorldName &&
-        beatText.includes(normalizedWorldName)
+        normalizedBeatLocation !==
+          normalizedWorldName &&
+        beatText.includes(
+          normalizedWorldName
+        )
       ) {
 
         const explicitTravel =
@@ -2428,130 +2462,112 @@ function validateBeatSemanticContinuity(blueprint) {
 
     /* -----------------------------------------------------
        E. TEMPORAL + LIGHTING CONSISTENCY
+       
+       IMPORTANT:
+       Temporal mismatch is WARNING ONLY.
+       The location's world-bible lighting is treated
+       as the default environmental state, not an
+       immutable lock for every cinematic beat.
+
+       This prevents false failures during:
+       - travel
+       - dawn transitions
+       - sunset transitions
+       - supernatural travel
+       - fast geographic movement
+       - cinematic transition shots
     ----------------------------------------------------- */
 
-   // Temporal/lighting validation must allow:
-// 1. explicit transitions,
-// 2. travel sequences,
-// 3. rapidly changing locations,
-// 4. supernatural/high-speed movement,
-// 5. cinematic transition beats.
-//
-// A location's world_bible lighting is the default state,
-// not an immutable lighting lock for every beat.
+    const actionText =
+      normalizeSemanticText([
+        beat?.story_action || "",
+        beat?.character_action || "",
+        beat?.visual_priority || "",
+        beat?.transition_to_next || ""
+      ].join(" "));
 
-const actionText = [
-  beat.story_action || "",
-  beat.character_action || "",
-  beat.visual_priority || "",
-  beat.transition_to_next || ""
-]
-  .join(" ")
-  .toLowerCase();
+    const temporalTransitionTerms = [
+      "sunrise",
+      "sunset",
+      "dawn",
+      "dusk",
+      "nightfall",
+      "daybreak",
+      "pre-dawn",
+      "predawn",
+      "transition",
+      "changes from",
+      "changes into",
+      "becomes",
+      "light changes",
+      "sky brightens",
+      "sky darkens",
+      "approaches dawn",
+      "approaching dawn",
+      "toward dawn",
+      "towards dawn",
+      "travel",
+      "travels",
+      "travelling",
+      "traveling",
+      "flies",
+      "flying",
+      "flight",
+      "journey",
+      "crosses",
+      "crossing",
+      "returns",
+      "returning",
+      "approaches",
+      "approaching",
+      "arrives",
+      "arrival",
+      "moves toward",
+      "moves towards",
+      "passes over"
+    ];
 
-const locationText = [
-  location.time_of_day || "",
-  location.lighting_conditions || "",
-  location.celestial_conditions || ""
-]
-  .join(" ")
-  .toLowerCase();
+    const hasExplicitTemporalTransition =
+      containsAny(
+        actionText,
+        temporalTransitionTerms
+      );
 
-const transitionTerms = [
-  "sunrise",
-  "sunset",
-  "dawn",
-  "dusk",
-  "nightfall",
-  "daybreak",
-  "pre-dawn",
-  "transition",
-  "changes from",
-  "changes into",
-  "becomes",
-  "light changes",
-  "sky brightens",
-  "sky darkens",
-  "approaches dawn",
-  "approaching dawn",
-  "toward dawn",
-  "towards dawn",
-  "travel",
-  "travels",
-  "travelling",
-  "traveling",
-  "flies",
-  "flying",
-  "flight",
-  "journey",
-  "crosses",
-  "crossing",
-  "returns",
-  "returning",
-  "approaches",
-  "approaching",
-  "arrives",
-  "arrival",
-  "moves toward",
-  "moves towards",
-  "passes over"
-];
+    const temporalConflict =
+      hasTemporalConflict(
+        beat,
+        location
+      );
 
-const hasExplicitTransition =
-  transitionTerms.some(term =>
-    actionText.includes(term)
-  );
+    if (
+      temporalConflict &&
+      !hasExplicitTemporalTransition
+    ) {
 
-const temporalConflictPairs = [
-  ["night", "sunrise"],
-  ["night", "daybreak"],
-  ["night", "dawn"],
-  ["midnight", "sunrise"],
-  ["midnight", "dawn"],
-  ["pre-dawn", "full daylight"],
-  ["pre-dawn", "midday"],
-  ["daylight", "midnight"],
-  ["daylight", "deep night"]
-];
-
-const hasTemporalConflict =
-  temporalConflictPairs.some(([a, b]) =>
-    (
-      actionText.includes(a) &&
-      locationText.includes(b)
-    ) ||
-    (
-      actionText.includes(b) &&
-      locationText.includes(a)
-    )
-  );
-
-// Do NOT reject travel/transition beats.
-// Only reject a direct contradiction when there is
-// no explicit transition or movement context.
-if (
-  hasTemporalConflict &&
-  !hasExplicitTransition
-) {
-  errors.push(
-    `Beat ${beat.beat_number} has a temporal/lighting contradiction with location "${beat.location}". Beat action and world-bible lighting must represent the same coherent temporal state or an explicit transition.`
-  );
-}
+      warnings.push(
+        `Beat ${beatNumber} may have a temporal/lighting mismatch with location "${beat?.location}". Verify that the action, sky brightness, celestial state and lighting remain coherent.`
+      );
+    }
 
 
     /* -----------------------------------------------------
-       F. SUNRISE / SUNSET CONTRADICTION
+       F. SUNRISE / NIGHT CHECK
+       
+       WARNING ONLY.
+       This is deliberately NOT an error because a beat
+       can represent a transition from night to dawn.
     ----------------------------------------------------- */
 
     const sunriseInBeat =
       containsAny(
-        beatText,
+        actionText,
         [
           "sunrise",
           "first light",
           "first golden ray",
           "golden ray of sunrise",
-          "dawn light"
+          "dawn light",
+          "daybreak"
         ]
       );
 
@@ -2567,23 +2583,33 @@ if (
         ]
       );
 
-    if (
-      sunriseInBeat &&
-      nightInLocation &&
-      !containsAny(
-        beatText,
+    const explicitDawnTransition =
+      containsAny(
+        actionText,
         [
           "transition from night",
           "night giving way",
           "dawn begins",
           "dawn breaks",
-          "sunrise begins"
+          "sunrise begins",
+          "sky brightens",
+          "night fades",
+          "night recedes",
+          "first light appears",
+          "approaching dawn",
+          "toward dawn",
+          "towards dawn"
         ]
-      )
+      );
+
+    if (
+      sunriseInBeat &&
+      nightInLocation &&
+      !explicitDawnTransition
     ) {
 
-      errors.push(
-        `Beat ${beatNumber} describes sunrise/dawn while the selected location remains defined as night/moonlit without an explicit temporal transition.`
+      warnings.push(
+        `Beat ${beatNumber} describes sunrise/dawn while the selected location contains night/moonlit conditions. Verify the intended temporal transition.`
       );
     }
 
@@ -2640,10 +2666,15 @@ if (
         ? beat.characters
         : [];
 
-    for (const character of listedCharacters) {
+    for (
+      const character
+      of listedCharacters
+    ) {
 
       if (
-        !characterNames.has(character)
+        !characterNames.has(
+          character
+        )
       ) {
 
         errors.push(
@@ -2658,12 +2689,17 @@ if (
         [...characterNames].filter(
           name =>
             beatText.includes(
-              normalizeSemanticText(name)
+              normalizeSemanticText(
+                name
+              )
             )
         )
       );
 
-    for (const mentionedCharacter of beatActionMentions) {
+    for (
+      const mentionedCharacter
+      of beatActionMentions
+    ) {
 
       const isListed =
         listedCharacters.includes(
@@ -2675,15 +2711,18 @@ if (
           beat?.narration
         );
 
+      const actionOnlyText =
+        normalizeSemanticText(
+          `${beat?.story_action || ""} ${beat?.character_action || ""}`
+        );
+
       const onlyNarration =
         narrationText.includes(
           normalizeSemanticText(
             mentionedCharacter
           )
         ) &&
-        !normalizeSemanticText(
-          `${beat?.story_action || ""} ${beat?.character_action || ""}`
-        ).includes(
+        !actionOnlyText.includes(
           normalizeSemanticText(
             mentionedCharacter
           )
@@ -2705,7 +2744,9 @@ if (
        I. ADJACENT LOCATION CONTINUITY
     ----------------------------------------------------- */
 
-    if (index > 0) {
+    if (
+      index > 0
+    ) {
 
       const previousBeat =
         beats[index - 1];
@@ -2723,7 +2764,8 @@ if (
       if (
         previousLocation &&
         currentLocation &&
-        previousLocation !== currentLocation
+        previousLocation !==
+          currentLocation
       ) {
 
         const transitionText =
@@ -2752,7 +2794,9 @@ if (
             ]
           );
 
-        if (!transitionIsExplicit) {
+        if (
+          !transitionIsExplicit
+        ) {
 
           errors.push(
             `Geographic continuity break between beat ${previousBeat.beat_number} ("${previousBeat.location}") and beat ${beatNumber} ("${beat.location}"): location changes without an explicit travel, arrival, transition, or relocation action.`
@@ -2791,7 +2835,9 @@ if (
       const strongEnvironmentTerms =
         incompatibleEnvironmentTerms.filter(
           term =>
-            beatText.includes(term)
+            beatText.includes(
+              term
+            )
         );
 
       if (
@@ -2823,7 +2869,9 @@ if (
                 travelTerms
               );
 
-            if (!hasTravelContext) {
+            if (
+              !hasTravelContext
+            ) {
 
               warnings.push(
                 `Beat ${beatNumber} contains environment "${environmentTerm}" not found in the selected location "${currentLocationName}". Verify that the action is not leaking scenery from another location.`
