@@ -172,7 +172,8 @@
 
         const directorData =
           await directorResponse.json();
-
+console.log("DIRECTOR RESPONSE STATUS:", directorResponse.status);
+console.log("DIRECTOR RESPONSE:", directorData);
         if (!directorResponse.ok) {
           throw new Error(
             directorData.error ||
