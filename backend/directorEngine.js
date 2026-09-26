@@ -1311,7 +1311,7 @@ Return ONLY valid JSON matching the provided schema.
   const response =
   await ai.interactions.create({
     model:
-      "gemini-3.5-flash-lite",
+     "gemini-3-flash-preview",
 
     input:
       instruction
