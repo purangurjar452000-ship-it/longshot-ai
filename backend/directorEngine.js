@@ -1317,19 +1317,28 @@ Return ONLY valid JSON matching the provided schema.
       instruction
   });
 
-  if (!response?.output_text) {
-    throw new Error(
-      "Director Engine returned empty output."
-    );
-  }
+ if (!response?.output_text) {
+  throw new Error(
+    "Director Engine returned empty output. RAW RESPONSE: " +
+    JSON.stringify(response)
+  );
+}
+
 console.log(
   "DIRECTOR RAW OUTPUT:",
   response.output_text
 );
-  try {
-    return JSON.parse(
-      response.output_text
-    );
+
+try {
+  return JSON.parse(
+    response.output_text
+  );
+} catch (error) {
+  throw new Error(
+    "Director Engine returned invalid JSON. RAW OUTPUT: " +
+    response.output_text
+  );
+}
   } catch {
     throw new Error(
       "Director Engine returned invalid JSON."
