@@ -1309,15 +1309,6 @@ Return ONLY valid JSON matching the provided schema.
 `;
 
   const response =
-    await ai.interactions.create({
-
-      model:
-        "gemini-3.5-flash-lite",
-
-      input:
-        instruction,
-
-      const response =
   await ai.interactions.create({
     model:
       "gemini-3.5-flash-lite",
@@ -1325,7 +1316,6 @@ Return ONLY valid JSON matching the provided schema.
     input:
       instruction
   });
-    });
 
   if (!response?.output_text) {
     throw new Error(
