@@ -848,6 +848,10 @@ const directorSchema = {
                 }
               },
 
+              narration: {
+                type: "string"
+              },
+
               evidence_ids: {
                 type: "array",
                 items: {
@@ -1820,9 +1824,13 @@ IMPORTANT:
 - Keep geography continuity strict.
 - Keep physical movement believable.
 - Every story beat must contain an explicit characters array.
+- The beat characters array means characters physically visible or physically acting on screen at that beat location.
 - Include every named person, creature, object or agent that visibly acts in that beat.
+- Do not list a character merely because that character provides voice-over, narration, remembered speech or an off-screen explanation. Put that material in the optional narration field and keep the character out of characters unless the character is visibly present.
+- Every listed character must be physically plausible at the beat location. Do not move a character to a distant location solely to narrate information.
+- Preserve geographic continuity: a character remains in the previous location until the story explicitly shows travel or relocation. When a beat changes location, make the transition action explicit and use only characters who are actually present there.
 - Every character listed in a beat must have a matching character_bible entry.
-- Never mention a character in story_action or character_action while omitting that character from the beat characters array.
+- Never mention a character as physically acting in story_action or character_action while omitting that character from the beat characters array.
 - Preserve the exact character names from character_bible.
 - Separate camera capture from visual emulation.
 - Respect the exact requested duration.
@@ -2838,6 +2846,9 @@ CORRECTION RULES
 16. Correct each visual_claim classification against its own cited evidence.
 
 17. Never treat a verified location name as proof of its visual details.
+18. In every beat, characters are physically present onscreen at the stated location. Never place a character at a new location only because that character narrates or explains the scene.
+19. Use the optional narration field for off-screen voice-over. Keep narration separate from visible beat characters and character_action.
+20. Preserve geographic continuity between adjacent beats unless the beat explicitly contains travel or a documented location change.
 
 Return ONLY the corrected JSON blueprint.
 `;
