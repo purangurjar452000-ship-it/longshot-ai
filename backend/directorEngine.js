@@ -1322,7 +1322,10 @@ Return ONLY valid JSON matching the provided schema.
       "Director Engine returned empty output."
     );
   }
-
+console.log(
+  "DIRECTOR RAW OUTPUT:",
+  response.output_text
+);
   try {
     return JSON.parse(
       response.output_text
