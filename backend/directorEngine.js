@@ -4890,7 +4890,8 @@ MANDATORY
     await ai.interactions.create({
 
       model:
-        "gemini-3.5-flash-lite",
+
+  "gemini-3-flash-preview",
 
       input:
         correctionInstruction,
