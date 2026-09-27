@@ -4894,18 +4894,9 @@ MANDATORY
   "gemini-3-flash-preview",
 
       input:
-        correctionInstruction,
+        correctionInstruction
 
-      response_format: {
-
-        type: "text",
-
-        mime_type:
-          "application/json",
-
-        schema:
-          directorSchema
-      }
+     
     });
 
   if (
