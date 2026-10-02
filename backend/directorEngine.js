@@ -4958,15 +4958,24 @@ CLOSED EVIDENCE IDS
 
 ${JSON.stringify(
   [
-    ...(factLock?.locked_facts || [])
+    ...(Array.isArray(factLock?.locked_facts)
+      ? factLock.locked_facts
+      : []
+    )
       .map(item => item?.evidence_id)
       .filter(Boolean),
 
-    ...(factLock?.creative_reconstructions || [])
+    ...(Array.isArray(factLock?.creative_reconstructions)
+      ? factLock.creative_reconstructions
+      : []
+    )
       .map(item => item?.evidence_id)
       .filter(Boolean),
 
-    ...(factLock?.visual_notes || [])
+    ...(Array.isArray(factLock?.visual_notes)
+      ? factLock.visual_notes
+      : []
+    )
       .map(item => item?.evidence_id)
       .filter(Boolean)
   ],
