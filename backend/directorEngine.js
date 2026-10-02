@@ -4575,25 +4575,131 @@ async function autoCorrectBlueprint(
   duration,
   aspectRatio
 ) {
-
   const correctionInstruction = `
 
 You are the CORRECTION DIRECTOR of LongShot AI.
 
-The supplied Director Blueprint failed programmatic validation.
+IMPORTANT:
+The existing Director Blueprint is structurally important.
+You must CORRECT it, not redesign its schema.
 
-Return a corrected production-ready blueprint.
-
-Do NOT merely rewrite wording.
-Correct the actual semantic structure.
+Return ONLY valid JSON.
 
 =========================================================
-CHARACTER IDENTITY
+HARD STRUCTURE PRESERVATION
 =========================================================
 
-Never replace canonical characters.
+The corrected output MUST preserve the exact top-level structure
+of the CURRENT BLUEPRINT.
 
-Never use:
+Do NOT remove fields.
+Do NOT rename fields.
+Do NOT change field types.
+Do NOT convert objects into strings.
+Do NOT convert arrays into objects.
+Do NOT convert character objects into text.
+Do NOT create "[object Object]".
+
+Preserve these top-level sections whenever present:
+
+project
+evidence_policy
+character_bible
+world_bible
+visual_language
+story_blueprint
+continuity_system
+directing_rules
+quality_control
+_longshot_validation
+
+The corrected blueprint MUST contain:
+
+project.duration = ${duration}
+project.aspect_ratio = "${aspectRatio}"
+
+=========================================================
+TIMELINE
+=========================================================
+
+Preserve:
+
+story_blueprint.timeline.beats
+
+Each beat MUST remain an OBJECT.
+
+Each beat MUST contain the same structural fields as the
+CURRENT BLUEPRINT whenever those fields exist.
+
+Beat numbering MUST be:
+
+1, 2, 3, 4...
+
+Every beat MUST have:
+
+beat_number
+time_range
+duration
+location
+characters
+action
+visual_prompt
+
+Do NOT replace these with different field names.
+
+Timeline MUST:
+
+start at 0
+have no gaps
+have no overlaps
+end exactly at ${duration}
+
+Total beat duration MUST equal ${duration} seconds.
+
+=========================================================
+CHARACTERS
+=========================================================
+
+NEVER replace canonical characters.
+
+Preserve every character already present in:
+
+character_bible.characters
+
+Preserve:
+
+name
+apparent_age
+face
+facial_structure
+eyes
+hair
+fur
+skin
+body_texture
+body_type
+height
+scale
+body_proportions
+musculature
+anatomy
+hands_and_fingers
+feet_and_toes
+breathing
+micro_expressions
+costume
+costume_colors
+costume_material
+costume_physics
+accessories
+signature_features
+movement_signature
+identity_status
+identity_fingerprint
+character_identity_lock
+visual_claims
+
+Never create:
 
 generic warrior
 generic soldier
@@ -4611,63 +4717,98 @@ injured warrior
 Alexander's commander
 Alexander-era soldier
 
+Every beat character reference MUST be a canonical character NAME
+string.
+
+Example:
+
+"characters": ["Hanuman", "Rama"]
+
+NOT:
+
+"characters": [
+  {"name": "Hanuman"}
+]
+
+NOT:
+
+"characters": [
+  {"character": "Hanuman"}
+]
+
+=========================================================
+IDENTITY LOCK
+=========================================================
+
+Every existing character_identity_lock MUST be preserved.
+
+Required fields:
+
+face_identity
+apparent_age
+body_identity
+costume_identity
+signature_features
+
+If a field exists in the CURRENT BLUEPRINT, preserve it exactly
+unless validation specifically requires correction.
+
+Never invent a replacement identity.
+
+=========================================================
+WORLD / LOCATIONS
+=========================================================
+
 Preserve:
 
-canonical name
-apparent age
-face
-facial structure
-eyes
-hair/fur
-skin/body texture
-body type
-height/scale
-body proportions
-musculature
-anatomy
-costume
-costume colors
-costume material
-costume physics
-accessories
-signature features
-movement signature
+world_bible.locations
+
+Every location MUST remain an OBJECT.
+
+Do NOT convert location objects into strings.
+
+Every beat.location MUST reference a real physical location
+already present in world_bible.locations whenever possible.
+
+A carried mountain is an OBJECT, not an ENVIRONMENT.
+
+If Hanuman carries Mount Dronagiri into a camp:
+
+location remains the camp.
+
+The mountain must be described as a carried object / visible
+object, not as the surrounding environment.
 
 =========================================================
-EVIDENCE STATUS
+EVIDENCE
 =========================================================
-
-CRITICAL:
-
-Do NOT mark a location VERIFIED unless it has direct evidence
-from a locked fact or visual note.
-
-Do NOT mark a visual claim VERIFIED unless its evidence_ids
-directly support the claim.
-
-Use INFERRED for reasonable reconstruction.
-
-Use CREATIVE_RECONSTRUCTION for intentionally invented cinematic
-visual details.
-
-Use UNKNOWN when evidence is insufficient.
 
 Never create new evidence IDs.
 
-=========================================================
-LOCATION
-=========================================================
+Only use evidence IDs present in:
 
-Location is the physical environment of the visible action.
+CLOSED EVIDENCE IDS
 
-Flying characters belong in:
+Do NOT mark unsupported visual claims VERIFIED.
 
-sky
-air corridor
-open air
-credible travel corridor
+Use:
 
-unless explicitly departing, landing or arriving.
+INFERRED
+
+or
+
+CREATIVE_RECONSTRUCTION
+
+or
+
+UNKNOWN
+
+when direct evidence is unavailable.
+
+Do NOT mark a location VERIFIED unless direct evidence supports it.
+
+Do NOT mark a visual claim VERIFIED unless its evidence_ids
+directly support that claim.
 
 =========================================================
 TEMPORAL LOGIC
@@ -4681,7 +4822,7 @@ by sunrise
 by dawn
 before first light
 
-Do NOT convert them into sunrise lighting.
+They do NOT mean sunrise lighting.
 
 These are TRANSITIONS:
 
@@ -4692,64 +4833,35 @@ as dawn approaches
 night fades
 night gives way
 
-Do NOT automatically convert them into daylight.
+Do not automatically convert them into daylight.
 
 =========================================================
-ENVIRONMENT LOGIC
+GEOGRAPHY
 =========================================================
 
-A carried mountain is an OBJECT, not an ENVIRONMENT.
+Flying characters belong in:
 
-"Himalayan Peak" is compatible with:
+sky
+air corridor
+open air
+credible travel corridor
 
-mountain
-mountain peak
-snow
-snowfield
-alpine terrain
-Dronagiri
-Himalayan terrain
+unless the beat explicitly shows:
 
-Do not turn a camp into a mountain environment merely because
-Hanuman carries a mountain into it.
+departure
+landing
+arrival
 
-=========================================================
-ACTION DENSITY
-=========================================================
+Do not place a flying action inside a fixed camp environment
+unless the action explicitly begins or ends there.
 
-This rule is HARD:
-
-3-second beat:
-maximum 1 major action group.
-
-4–6 second beat:
-maximum 2 major action groups.
-
-If a beat has 3 or more major action groups,
-SPLIT IT.
-
-You ARE allowed to increase beat count.
-
-You ARE allowed to redistribute durations.
-
-You ARE allowed to create 7, 8, 9 or more beats if necessary.
-
-Total duration MUST remain exactly ${duration} seconds.
-
-Timeline MUST:
-
-start at 0
-have no gaps
-have no overlaps
-end exactly at ${duration}
-
-Beat numbers MUST be sequential:
-
-1, 2, 3, 4...
+Geographic transitions MUST be explicit.
 
 =========================================================
 CAUSAL CONTINUITY
 =========================================================
+
+Preserve causal order.
 
 Never:
 
@@ -4769,8 +4881,56 @@ travel → arrival
 
 without travel/departure.
 
-Treatment + revival may happen in the same beat only if clearly
-causal and not overloaded.
+Treatment + revival may occur in one beat only if the beat
+duration and action density allow it.
+
+=========================================================
+ACTION DENSITY
+=========================================================
+
+3 second beat:
+maximum 1 major action group.
+
+4–6 second beat:
+maximum 2 major action groups.
+
+If overloaded:
+
+SPLIT THE BEAT.
+
+You may increase beat count.
+
+Total duration MUST remain exactly ${duration} seconds.
+
+=========================================================
+CURRENT BLUEPRINT
+=========================================================
+
+${JSON.stringify(
+  blueprint,
+  null,
+  2
+)}
+
+=========================================================
+VALIDATION ERRORS
+=========================================================
+
+${JSON.stringify(
+  validation?.errors || [],
+  null,
+  2
+)}
+
+=========================================================
+VALIDATION WARNINGS
+=========================================================
+
+${JSON.stringify(
+  validation?.warnings || [],
+  null,
+  2
+)}
 
 =========================================================
 RESEARCH
@@ -4799,130 +4959,90 @@ CLOSED EVIDENCE IDS
 ${JSON.stringify(
   [
     ...(factLock?.locked_facts || [])
-      .map(
-        item =>
-          item?.evidence_id
-      )
+      .map(item => item?.evidence_id)
       .filter(Boolean),
 
     ...(factLock?.creative_reconstructions || [])
-      .map(
-        item =>
-          item?.evidence_id
-      )
+      .map(item => item?.evidence_id)
       .filter(Boolean),
 
     ...(factLock?.visual_notes || [])
-      .map(
-        item =>
-          item?.evidence_id
-      )
+      .map(item => item?.evidence_id)
       .filter(Boolean)
-
   ],
   null,
   2
 )}
 
 =========================================================
-CURRENT BLUEPRINT
+FINAL REQUIREMENTS
 =========================================================
 
-${JSON.stringify(
-  blueprint,
-  null,
-  2
-)}
-
-=========================================================
-VALIDATION ERRORS
-=========================================================
-
-${JSON.stringify(
-  validation.errors,
-  null,
-  2
-)}
-
-=========================================================
-VALIDATION WARNINGS
-=========================================================
-
-${JSON.stringify(
-  validation.warnings,
-  null,
-  2
-)}
-
-=========================================================
-MANDATORY
-=========================================================
-
-1. Preserve canonical character names.
-2. Preserve identity locks.
-3. Preserve apparent ages.
-4. Preserve face continuity.
-5. Preserve body continuity.
-6. Preserve costume continuity.
-7. Preserve verified research facts.
-8. Preserve valid evidence IDs.
-9. Correct location/action mismatch.
-10. Correct geography.
-11. Correct temporal logic.
-12. Do not mistake deadlines for sunrise.
-13. Correct environment leakage.
-14. Do not treat carried objects as environments.
-15. Correct causal gaps.
-16. Correct action density.
-17. Split overloaded beats.
-18. Keep exact ${duration}s duration.
-19. Keep exact ${aspectRatio} aspect ratio.
-20. Keep contiguous timeline.
-21. Use sequential beat numbers.
-22. Every visible character must appear in characters[].
-23. Every beat must have a real physical location.
-24. Never mark unsupported visual details VERIFIED.
-25. Return ONLY corrected JSON.
-
+1. Correct ONLY what validation requires.
+2. Preserve the existing schema.
+3. Preserve all valid character objects.
+4. Preserve all valid location objects.
+5. Preserve continuity_system.
+6. Preserve identity locks.
+7. Preserve realism fields.
+8. Preserve evidence policy.
+9. Preserve visual language.
+10. Preserve directing rules.
+11. Preserve quality control.
+12. Preserve _longshot_validation.
+13. Every beat remains an OBJECT.
+14. Every character reference inside beats is a STRING name.
+15. No "[object Object]".
+16. No undefined beat numbers.
+17. No undefined duration.
+18. No missing timeline.
+19. Exact ${duration}s duration.
+20. Exact ${aspectRatio} aspect ratio.
+21. Sequential beat numbers.
+22. No timeline gaps.
+23. No timeline overlaps.
+24. No unsupported VERIFIED claims.
+25. Never create new evidence IDs.
+26. Return ONLY valid JSON.
 `;
 
   const response =
     await ai.interactions.create({
-
       model:
-
-  "gemini-3-flash-preview",
-
+        "gemini-3-flash-preview",
       input:
         correctionInstruction
-
-     
     });
 
-  if (
-    !response?.output_text
-  ) {
-
+  if (!response?.output_text) {
     throw new Error(
       "Correction Engine returned empty output."
     );
   }
 
+  console.log(
+    "CORRECTION RAW OUTPUT:",
+    response.output_text
+  );
+
+  const cleanedOutput =
+    response.output_text
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
   try {
+    const correctedBlueprint =
+      JSON.parse(cleanedOutput);
 
-    const cleanedOutput =
-  response.output_text
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
+    return correctedBlueprint;
 
-return JSON.parse(cleanedOutput);
-
-  } catch {
+  } catch (error) {
 
     throw new Error(
-      "Correction Engine returned invalid JSON."
+      "Correction Engine returned invalid JSON. RAW OUTPUT: " +
+      response.output_text
     );
   }
 }
